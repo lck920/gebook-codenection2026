@@ -1,0 +1,196 @@
+---
+title: "UI system (cossUI)"
+---
+
+# UI system (cossUI)
+
+Reference: [../reference/frontend-sources.md](../reference/frontend-sources.md)
+and [../reference/handoff.md](../reference/handoff.md).
+
+## Tokens
+
+The cossUI token CSS is ported from the handoff into
+`apps/web/src/app/styles/tokens`:
+
+- `colors.css` — `--ink-*` (cool blue-grey) and `--corn-*` (cornflower) ramps
+  plus semantic aliases (`--background`, `--foreground`, `--card`, `--primary`,
+  `--brand`, `--muted`, `--border`, status colors) and a `.dark` scope.
+  The light theme preserves the handoff's cool blue-grey composition. Dark mode
+  uses true black for the canvas, neutral raised surfaces for cards/sidebar,
+  and keeps cornflower only as an accent. The handoff shipped dark token values
+  but its final compositions were light-only; copying the navy tokens into the
+  later three-pane planner flattened the shell and competed with the black map.
+- `spacing.css` — radius scale (base 10px, card `2xl`), spacing steps,
+  elevation shadows, top-highlight, shadow-as-border, focus-ring, and motion
+  tokens (`--press-scale: 0.96`, `--ease-out`, `--enter-stagger`).
+- `typography.css` — font stacks and type scale.
+- `fonts.css` — `@font-face` for Cal Sans, Cal Sans UI, Paper Mono.
+
+Font variable contract: `--font-sans`, `--font-heading`, `--font-mono`. Use
+semantic tokens, never raw palette values.
+
+The image-generated application icon uses the same restrained Navy Ink palette:
+`--ink-800` for its full-bleed field, with `--ink-50` and cornflower expressing
+the two visible faces of a continuous Möbius journey. The source artwork is
+`apps/web/public/app-icon-master.png`; run
+`pnpm --filter @opentrip/web icons:generate` after replacing it to regenerate
+the favicon, apple-touch, and PWA PNGs. Do not redraw the artwork as SVG paths.
+
+## Primitives
+
+Implemented in `apps/web/src/shared/ui`, matching cossUI APIs:
+
+`button`, `badge`, `input`, `textarea`, `checkbox`, `tabs`, `card` (+ parts),
+`avatar`, `spinner`, `autocomplete`, `select`, `context-menu`, `tooltip`,
+`popover`, `preview-card`, `dialog`, `drawer`, `collapsible`, `splitter`,
+`scroll-edge-fade`, `markdown-editor`, `otp-field`. Each exposes a public
+`index.ts`.
+
+`otp-field` is the segmented one-time-code input (Base UI OTP Field) used by
+email registration verification in `AuthForm`.
+
+`drawer` is the mobile sheet surface (Base UI Dialog): `DrawerContent
+side="bottom"` for bottom sheets, `side="full"` for full-screen surfaces, both
+safe-area padded. For dialogs that exist on both form factors, use
+`DialogSheetViewport` + `DialogSheetPopup` from `dialog` — a bottom sheet below
+the `md` breakpoint, a centered card above. Overlay viewports pin to the
+Visual Viewport (`--vv-*` via `installVisualViewportCssVars`) so the virtual
+keyboard does not cover inputs; see [mobile-pwa.md](mobile-pwa.md).
+
+`preview-card` is a hover/focus-triggered rich card (Base UI PreviewCard). Use
+it, rather than `tooltip`, when the hover content is structured (e.g. the
+settle-up transfer breakdown in the budget board) instead of a short hint.
+
+`splitter` implements the WAI-ARIA APG Window Splitter pattern: a focusable
+separator with `aria-valuenow/min/max`, `aria-controls`, keyboard arrow-key
+resizing, `Enter` to collapse/restore, and `Home`/`End` to jump to extremes.
+
+`scroll-edge-fade` wraps an overflowing strip (horizontal or vertical) with
+CSS `mask-image` edge fades. Mask width appears only on overflowing ends
+(ease-out). Optional circular chevron page controls (`showControls`, default
+on) page by roughly one viewport with the shared ease-out curve — turn them
+off for free-scroll lists that only need fades. Used by DayPills (horizontal
++ controls) and the planner Sidebar stop list (vertical, fades only).
+
+Application icons come from `lucide-react`; feature and widget code does not
+duplicate handwritten SVG paths. Decorative icons are hidden from assistive
+technology while icon-only controls retain localized labels.
+Variants/sizes come from props, not ad-hoc overrides. Icon-only buttons require
+`aria-label`; form controls set an explicit `type`.
+
+Agent replies may include json-render `data-spec` parts. The planner-private
+registry under `pages/travel-planner/ui/agent` maps the shared catalog to these
+cossUI primitives and semantic tokens; it does not install or wrap the shadcn
+registry. Live and persisted messages use the same renderer. Runtime catalog
+validation and an error boundary isolate invalid generated content from the
+chat timeline. Static fallback, status, and comparison copy stays in the agent
+locale resources; model-provided plan content remains message data.
+
+Street-view responses carry typed, persistent `data-agent-grounding` parts;
+`found` responses also carry a server-built `data-spec`. When the API emits a
+typed `data-agent-status`, the page shows localized fixed copy instead of the
+accompanying persisted text. A cossUI retry button appears only when
+`retryable=true` and a structured place/coordinate request is present. Its
+localized follow-up reconstructs that explicit request and re-enters the same
+deterministic application workflow.
+
+`StreetViewCard` accepts only a bounded opaque image id and optional place
+label. It hydrates static preview, capture time, and attribution from the
+authenticated trip API. Its action opens the same page-scoped MapillaryJS
+dialog used by the map context menu; model-provided URLs and credentials are
+never accepted.
+
+Stop notes expand into the planner main pane (replacing map/schedule/budget)
+via a Milkdown Crepe WYSIWYG editor (Crepe TopBar as fixed chrome, block slash
+menu). Images upload through `POST /api/trips/:id/media` into the shared
+object-storage port (same FS/S3 adapters as avatars) and embed as hosted URLs
+in Markdown. Closing asks to save or discard when the draft is dirty. The
+sidebar keeps a Markdown preview (`react-markdown` + `.wf-markdown`); click
+or the expand control opens the main-pane editor. Agent chat assistant replies
+use Streamdown (same `.wf-markdown` scope) so incomplete streaming Markdown
+stays readable without a hand-rolled parser.
+
+`autocomplete` and `select` are adapted from the coss components and built on
+Base UI (`@base-ui/react`). `autocomplete` powers the stop-name place search
+(async, relevance-sorted suggestions; use `mode="none"` with controlled
+`value`/`items` for server-driven results, and read the selected item on the
+`item-press` change reason). `select` provides the schedule time and date
+pickers (predefined options via the `items`-first pattern). `context-menu`
+powers the map's right-click / long-press actions (add a stop at the clicked
+point, copy coordinates). The shared `ContextMenuTrigger` disarms Base UI's
+long-press timer as soon as a second finger touches down (via a synthetic
+`touchcancel`), so pinch-zooming a wrapped surface (the map) never pops the
+menu mid-gesture.
+
+Text controls must render at >= 16px below the `md` breakpoint — iOS Safari
+auto-zooms the page when a focused text control is smaller. On the coss type
+scale that means `text-md` (1rem; `text-sm` is 13px and `text-base` is 14px,
+both under the threshold — `--text-md` is mapped into the Tailwind theme in
+`global.css` for exactly this). The shared `input`, `textarea`,
+`autocomplete`, and `otp-field` components encode this as
+`text-md md:text-sm`; any one-off `<input>`/`<textarea>` must follow the same
+pattern instead of a bare `text-sm`/`text-base`.
+
+## Interaction polish
+
+From make-interfaces-feel-better, applied consistently:
+
+- Root: `-webkit-font-smoothing: antialiased`.
+- Headings `text-wrap: balance`; body/caption `text-wrap: pretty`.
+- All dynamic numbers (money, time, counts) use `tabular-nums`.
+- Transitions specify exact properties — never `transition: all`.
+- Pressable controls use `active:scale-[0.96]`.
+- Small icon buttons keep a >= 40x40 hit area.
+- Concentric radius on nested surfaces; shadows over hard borders for elevated
+  surfaces.
+- No focus glow/ring: the default focus outline is removed app-wide in
+  `global.css`, and interactive surfaces convey focus through hover, border, and
+  background changes (matching the Input/Autocomplete treatment).
+
+## Motion
+
+Motion has a single source of truth so effects are never re-implemented per
+component (derived from Emil Kowalski's craft bar; see the `review-animations`
+skill).
+
+- **Tokens** (`tokens/spacing.css`): `--press-scale`, `--ease-out` (the one UI
+  easing curve), and durations `--dur-fast` (120ms), `--dur-base` (150ms),
+  `--dur-slow` (200ms), `--dur-icon` (300ms). UI motion stays under 300ms; the
+  icon cross-fade is the only 300ms exception. Never hardcode milliseconds or a
+  raw `cubic-bezier`.
+- **Utilities** (`global.css`, referenced via `shared/lib` identifiers):
+  `pressable` (`.wf-pressable`) for press-scale only, `interactive`
+  (`.wf-interactive`) for background/color feedback + press, and `field`
+  (`.wf-field`) for input border/background. These replace the repeated
+  `transition-[...] active:scale-[0.96]` strings.
+- **Icon cross-fade**: use the `IconSwap` primitive (`shared/ui/icon-swap`), the
+  single implementation of opacity/scale/blur glyph swapping (`.wf-icon-swap`).
+  State-driven by default; pass `hoverSwap` for hover reveals (gated to fine
+  pointers).
+- **List entrance**: put `.wf-enter-stagger` on the parent and `.wf-enter` on
+  children; the stagger step is `--enter-stagger` (60ms). Children never
+  hardcode `animationDelay`.
+- **Scroll reveal**: for sections that lift-and-fade the first time they enter
+  the viewport, use the `Reveal` wrapper (`pages/landing/ui/Reveal`, backed by
+  the `useReveal` IntersectionObserver hook) which drives the `.wf-reveal`
+  utility. Movement is transform/opacity only and reduced motion keeps the fade
+  but drops the lift. Reserve this for long marketing scrolls, not app chrome.
+- **Scroll edge fade**: use `ScrollEdgeFade` (`shared/ui/scroll-edge-fade`) for
+  overflowing strips — CSS `mask-image` edge fades (`.wf-scroll-edge-fade`) +
+  circular page controls with ease-out enter/exit and ease-out page scrolling.
+  Do not re-implement per feature.
+- **Popovers** (Select, ContextMenu, Autocomplete, Tooltip, Dialog) scale from
+  their trigger via `origin-(--transform-origin)` and Base UI
+  `data-starting-style`/`data-ending-style`; only modals stay centered.
+- **GPU-only**: animate `transform`/`opacity` — `box-shadow` is never placed in
+  a `transition`.
+
+## Accessibility
+
+- Every interactive control is reachable and labeled; icons that are decorative
+  use `aria-hidden`.
+- Color is never the only signal (status badges pair color with text).
+- Respect `prefers-reduced-motion`: movement (transform/translate) is dropped
+  while opacity/color transitions are kept — gentler, not zero. Hover-driven
+  motion is gated behind `@media (hover: hover) and (pointer: fine)` so touch
+  taps never fire false hover animations.

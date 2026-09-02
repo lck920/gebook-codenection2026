@@ -1,0 +1,133 @@
+{
+  "toggle": {
+    "open": "Open trip agent",
+    "close": "Close trip agent"
+  },
+  "panel": {
+    "title": "Trip agent",
+    "empty": "The agent watches this trip quietly. Mention @agent to ask something.",
+    "inputPlaceholder": "Ask about this trip… (@agent for a reply)",
+    "send": "Send",
+    "agentName": "Agent",
+    "systemName": "System",
+    "operationBy": "{{name}}",
+    "thinking": "Thinking…"
+  },
+  "attach": {
+    "add": "Attach a file",
+    "remove": "Remove attachment",
+    "imageAlt": "Attached image",
+    "fileFallback": "Attachment"
+  },
+  "mention": {
+    "listLabel": "Mention a member or the agent",
+    "toastTitle": "{{name}} mentioned you",
+    "view": "View"
+  },
+  "quote": {
+    "reply": "Reply",
+    "dismiss": "Dismiss quote"
+  },
+  "reasoning": {
+    "thinking": "Thinking…",
+    "thought": "Thought for a moment",
+    "thoughtFor_one": "Thought for {{count}} second",
+    "thoughtFor_other": "Thought for {{count}} seconds"
+  },
+  "approval": {
+    "approve": "Approve",
+    "deny": "Deny",
+    "viewersCannotApprove": "Editors can approve this change"
+  },
+  "context": {
+    "commentingOnStop": "Commenting on {{stop}}"
+  },
+  "debug": {
+    "copy": "Copy debug info"
+  },
+  "generated": {
+    "day": "Day {{day}}",
+    "recommended": "Recommended",
+    "pros": "Pros",
+    "cons": "Trade-offs",
+    "estimate": "Estimated budget",
+    "total": "Estimated total",
+    "invalid": "This generated view could not be displayed safely.",
+    "staleDay": "That day is no longer in this trip.",
+    "staleStop": "That stop is no longer in this trip.",
+    "fallback": {
+      "title": "Street view unavailable",
+      "place_not_found": "That place could not be found. Try a more specific place name.",
+      "invalid_request": "Provide a specific place name or valid coordinates.",
+      "service_unavailable": "The street-view service is temporarily unavailable.",
+      "retry": "Retry",
+      "retrying": "Retrying…",
+      "retryPlaceMessage": "@agent Show street view near {{place}}.",
+      "retryCoordinateMessage": "@agent Show street view at {{lat}}, {{longitude}}."
+    },
+    "streetView": {
+      "previewAlt": "Street-view preview",
+      "previewUnavailable": "Preview unavailable",
+      "loading": "Loading street view…",
+      "placeFallback": "Street view",
+      "captureUnknown": "Capture time unknown",
+      "open": "Open street view",
+      "retry": "Retry"
+    }
+  },
+  "tool": {
+    "proposed": "Proposed: {{tool}}",
+    "running": "Running {{tool}}…",
+    "approved": "Approved {{tool}}",
+    "denied": "Denied {{tool}}",
+    "applied": "Applied {{tool}}",
+    "names": {
+      "checkWeather": "Check weather",
+      "placeSearch": "Search places",
+      "placeNearby": "Nearby places",
+      "placeDetail": "Place details",
+      "routeCompute": "Compute route",
+      "routeMatrix": "Route matrix",
+      "reviewLookup": "Look up reviews",
+      "readTripMedia": "Read trip file",
+      "appendStopNote": "Append stop note"
+    }
+  },
+  "preview": {
+    "daySlot": "Day {{day}} · #{{position}}",
+    "moveTo": "Move to day {{day}} · #{{position}}",
+    "expenseMeta": "Paid by {{name}} · {{count}} sharing",
+    "renameTrip": "Rename trip to “{{title}}”",
+    "addDay": "Add a new day",
+    "deleteDay": "Remove day {{day}}",
+    "updateDay": "Update day {{day}}",
+    "updateDayCity": "Day {{day}} → {{city}}",
+    "reorderDays": "Reorder days: {{order}}",
+    "unknown": "Review the proposed change"
+  },
+  "toast": {
+    "title": "Agent suggestion",
+    "apply": "Approve",
+    "discuss": "Discuss",
+    "dismiss": "Deny",
+    "applied": "Suggestion approved",
+    "appliedByOther": "{{name}} approved an agent suggestion",
+    "stale": "Suggestion outdated - the trip has changed",
+    "applyError": "Could not approve the suggestion"
+  },
+  "seed": {
+    "message": "@agent Please help me create a trip: {{details}}.",
+    "joiner": ", ",
+    "part": {
+      "destination": "destination {{destination}}",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "dates": "{{start}} to {{end}}",
+      "start": "starting {{start}}",
+      "budget": "budget {{amount}}",
+      "budgetWithCurrency": "budget {{amount}} {{currency}}",
+      "party_one": "{{count}} person",
+      "party_other": "{{count}} people"
+    }
+  }
+}

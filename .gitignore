@@ -1,0 +1,66 @@
+# =============================================================================
+# 🛑 GITIGNORE — SENSITIVE FILES & BUILD ARTIFACTS
+# =============================================================================
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Production & Build outputs
+dist/
+build/
+.swc/
+.wrangler/
+.turbo/
+coverage/
+
+# Environment files & Secrets (CRITICAL — NEVER COMMIT)
+.env
+.env.*
+.env.local
+.env.*.local
+.dev.vars
+deploy/**/secrets.json
+deploy/**/.secrets*.json
+deploy/**/.env.production
+deploy/**/mysql-origin.env
+deploy/**/*.local.env
+deploy/cloudflare/wrangler.api.generated.json
+deploy/cloudflare/.secrets.local.json
+!.env.example
+
+# Local storage and file uploads
+uploads/
+backend/uploads/
+frontend/dist/
+
+# Database files & local sqlite
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+# IDE & OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.claude/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Generated types & workspace runtime cache
+worker-configuration.d.ts
+backend/src/infrastructure/cloudflare/worker-configuration.d.ts
+.workspace/
+.agents/scheduled_tasks.lock

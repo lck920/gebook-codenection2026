@@ -1,0 +1,47 @@
+{
+  "actions": {
+    "home": "Back to trips",
+    "retry": "Try again",
+    "signIn": "Sign in"
+  },
+  "photos": {
+    "map-flatlay": "A worn paper map, camera and travel journal laid out on a table",
+    "world-map-pen": "A hand tracing a route across an unfolded world map",
+    "map-topdown": "Looking down on a spread-out map as a finger points the way",
+    "airport-silhouette": "A traveler silhouetted at an airport window as a plane departs",
+    "mountain-haze": "Late light breaking over a hazy mountain ridge",
+    "waterfall-hiker": "A lone hiker standing before a roaring forest waterfall",
+    "ridge-cairn": "A hiker pausing at a stone cairn high on a mountain ridge",
+    "desk-globe": "A vintage desk globe turned toward Europe and Africa",
+    "lake-backpacker": "A backpacker looking out over a still alpine lake",
+    "gate-wait": "A traveler waiting at a sunlit airport gate as a plane climbs outside",
+    "dock-lake": "Someone sitting at the end of a quiet dock facing a mountain lake"
+  },
+  "variants": {
+    "404": {
+      "eyebrow": "Error 404",
+      "title": "This page took a wrong turn",
+      "body": "The link may be broken, or the page has moved on to its next destination. Let's get you back on the map."
+    },
+    "500": {
+      "eyebrow": "Error 500",
+      "title": "Something derailed on our end",
+      "body": "An unexpected error stopped this page from loading. Our team has been notified — give it another try in a moment."
+    },
+    "403": {
+      "eyebrow": "Error 403",
+      "title": "This route is off-limits",
+      "body": "You don't have access to this page. Sign in with the right account, or ask a trip member for an invite link."
+    },
+    "503": {
+      "eyebrow": "Maintenance",
+      "title": "We're tuning up the itinerary",
+      "body": "OpenTrip is briefly down for maintenance. We'll be back on the road shortly — thanks for your patience."
+    },
+    "offline": {
+      "eyebrow": "Offline",
+      "title": "You've lost the signal",
+      "body": "We can't reach OpenTrip right now. Check your connection and try again — your trip is waiting."
+    }
+  }
+}

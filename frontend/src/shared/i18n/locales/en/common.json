@@ -1,0 +1,213 @@
+{
+  "pwa": {
+    "offlineReady": "Gebook is ready for offline use",
+    "updateReady": "A Gebook update is ready",
+    "updateDescription": "Refresh when you are ready to use the latest version.",
+    "updateAction": "Update"
+  },
+  "mobileOnboarding": {
+    "later": "Not now",
+    "install": {
+      "title": "Add Gebook to your home screen",
+      "description": "Install the app for a full-screen experience and offline access.",
+      "action": "Install",
+      "iosHint": "Open your browser's share menu and choose \"Add to Home Screen\".",
+      "iosAction": "Got it"
+    },
+    "notifications": {
+      "title": "Allow notifications",
+      "description": "Trip updates arrive as system notifications while Gebook is in the background.",
+      "action": "Allow"
+    },
+    "location": {
+      "title": "Allow precise location",
+      "description": "Shows your position on the trip map.",
+      "action": "Allow"
+    }
+  },
+    "appName": "Gebook",
+    "tagline": "Gepuk the chaos, book the dream.",
+    "language": "Language",
+    "languageName": {
+        "en": "English"
+    },
+    "actions": {
+        "back": "Back to trips",
+        "invite": "Invite",
+        "inviteCopied": "Link copied ✓",
+        "signIn": "Sign in",
+        "signOut": "Sign out",
+        "cancel": "Cancel",
+        "close": "Close",
+        "save": "Save",
+        "collapseSidebar": "Collapse sidebar",
+        "expandSidebar": "Expand sidebar",
+        "scrollPrevious": "Scroll previous",
+        "scrollNext": "Scroll next"
+    },
+    "state": {
+        "loading": "Loading…",
+        "error": "Something went wrong.",
+        "retry": "Try again",
+        "tripUnavailable": "This trip is not available.",
+        "tripUnavailableHint": "It may have been removed, or you need an invite link from a member to join."
+    },
+    "settings": {
+        "userMenu": {
+            "profile": "Profile",
+            "preferences": "Preferences",
+            "about": "About"
+        },
+        "groups": {
+            "personal": "Personal",
+            "application": "Application"
+        },
+        "nav": {
+            "profile": "Profile",
+            "preferences": "Preferences",
+            "about": "About"
+        },
+        "profile": {
+            "title": "Profile",
+            "description": "Your display name and public identity.",
+            "displayName": "Display name",
+            "uploadAvatar": "Upload avatar",
+            "removeAvatar": "Remove avatar",
+            "save": "Save profile",
+            "saving": "Saving…",
+            "errorTitle": "Profile update failed",
+            "errors": {
+                "displayNameRequired": "Display name is required.",
+                "saveFailed": "Failed to save profile.",
+                "avatarTooLarge": "Avatar must be smaller than 2 MB.",
+                "avatarUnsupported": "Only PNG, JPEG and WebP images are allowed.",
+                "avatarUploadFailed": "Failed to upload avatar.",
+                "avatarRemoveFailed": "Failed to remove avatar."
+            },
+            "security": {
+                "title": "Account & security",
+                "description": "Email, password, and two-factor authentication.",
+                "cancel": "Cancel",
+                "errorTitle": "Security update failed",
+                "successTitle": "Security updated",
+                "email": {
+                    "title": "Email",
+                    "desc": "Change the email address for your account.",
+                    "label": "Email",
+                    "verified": "{{email}} · Verified",
+                    "change": "Change",
+                    "newLabel": "New email",
+                    "continue": "Continue",
+                    "currentOtpLabel": "Code sent to your current email",
+                    "newOtpLabel": "Code sent to your new email",
+                    "verifyCurrent": "Verify current email",
+                    "confirm": "Confirm new email",
+                    "otpSentCurrent": "Check your current inbox for a code.",
+                    "otpSentNew": "Check your new inbox for a code.",
+                    "changed": "Email updated."
+                },
+                "password": {
+                    "title": "Password",
+                    "desc": "Update the password used to sign in.",
+                    "label": "Password",
+                    "set": "Password is set",
+                    "unset": "No password yet",
+                    "change": "Change password",
+                    "setup": "Set password",
+                    "current": "Current password",
+                    "new": "New password",
+                    "confirm": "Confirm new password",
+                    "submit": "Update password",
+                    "changed": "Password updated.",
+                    "setupHint": "We will email a code so you can set a password for this account.",
+                    "sendSetupOtp": "Send setup code",
+                    "setupOtpLabel": "Setup code",
+                    "setupOtpSent": "Check your email for a setup code.",
+                    "setupSubmit": "Set password",
+                    "setupDone": "Password set."
+                },
+                "twoFactor": {
+                    "title": "Two-factor authentication",
+                    "desc": "Add a one-time code from an authenticator app.",
+                    "label": "Two-factor authentication",
+                    "on": "Enabled",
+                    "off": "Not enabled",
+                    "enable": "Enable",
+                    "manage": "Manage",
+                    "enableHint": "Confirm your password, then scan the QR code with an authenticator app.",
+                    "continue": "Continue",
+                    "scanHint": "Scan this QR code, then enter the 6-digit code from your app.",
+                    "manualSecret": "Or enter this secret manually:",
+                    "codeLabel": "Authenticator code",
+                    "verify": "Verify and enable",
+                    "enabled": "Two-factor authentication is on.",
+                    "backupHint": "Save these backup codes somewhere safe. Each code works once.",
+                    "done": "Done",
+                    "manageHint": "Regenerate backup codes or turn off two-factor authentication.",
+                    "regenerateBackup": "Regenerate backup codes",
+                    "disable": "Disable",
+                    "disabled": "Two-factor authentication is off.",
+                    "backupRegenerated": "New backup codes generated."
+                },
+                "errors": {
+                    "emailInvalid": "Enter a valid email address.",
+                    "emailSame": "That is already your email.",
+                    "otpSend": "Could not send a verification code.",
+                    "otpInvalid": "That code is invalid or expired.",
+                    "passwordRequired": "Password is required.",
+                    "passwordMismatch": "New passwords do not match.",
+                    "passwordTooShort": "Password must be at least 8 characters.",
+                    "passwordChangeFailed": "Could not change password.",
+                    "passwordSetupFailed": "Could not set password.",
+                    "twoFactorEnableFailed": "Could not start two-factor setup.",
+                    "twoFactorDisableFailed": "Could not disable two-factor authentication.",
+                    "backupCodesFailed": "Could not regenerate backup codes."
+                }
+            }
+        },
+        "preferences": {
+            "title": "Preferences",
+            "description": "Language, appearance, and currency settings."
+        },
+        "appearance": {
+            "label": "Appearance",
+            "system": "System",
+            "light": "Light",
+            "dark": "Dark"
+        },
+        "language": {
+            "label": "Language"
+        },
+        "currency": {
+            "label": "Currency",
+            "errorTitle": "Currency update failed",
+            "errors": {
+                "saveFailed": "Failed to save default currency."
+            }
+        },
+        "permissions": {
+            "label": "Device permissions",
+            "allow": "Allow",
+            "granted": "Allowed",
+            "denied": "Blocked — enable in browser settings",
+            "unsupported": "Not supported by this browser",
+            "install": {
+                "label": "Install app",
+                "installed": "Installed",
+                "action": "Install",
+                "iosHint": "Add via the browser share menu"
+            },
+            "notifications": {
+                "label": "Notifications"
+            },
+            "location": {
+                "label": "Precise location"
+            }
+        },
+        "about": {
+            "title": "About",
+            "version": "Version {{version}}",
+            "description": "OpenTrip is a collaborative trip planner for friends and families."
+        }
+    }
+}

@@ -1,0 +1,50 @@
+/* Gebook — Typography
+ * ----------------------------------------------------------------------------
+ * Plus Jakarta Sans for ultra-clean, modern, polished interface & display text.
+ * Paper Mono for code & numerics.
+ */
+
+:root {
+  --font-sans: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Paper Mono", ui-monospace, "SF Mono", "JetBrains Mono",
+    "Menlo", monospace;
+
+  /* Type scale — interface-first, modest steps */
+  --text-xs: 0.75rem;       /* 12px */
+  --text-sm: 0.8125rem;     /* 13px */
+  --text-base: 0.875rem;    /* 14px */
+  --text-md: 1rem;          /* 16px */
+  --text-lg: 1.125rem;      /* 18px */
+  --text-xl: 1.375rem;      /* 22px */
+  --text-2xl: 1.75rem;      /* 28px */
+  --text-3xl: 2.25rem;      /* 36px */
+  --text-4xl: 3rem;         /* 48px */
+  --text-5xl: 3.75rem;      /* 60px */
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+
+  --tracking-tight: -0.02em;
+  --tracking-snug: -0.01em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.02em;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+
+  /* Semantic roles */
+  --text-display: var(--text-4xl);
+  --text-title: var(--text-2xl);
+  --text-heading: var(--text-lg);
+  --text-body: var(--text-base);
+  --text-label: var(--text-sm);
+  --text-caption: var(--text-xs);
+}

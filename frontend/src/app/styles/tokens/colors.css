@@ -1,0 +1,178 @@
+/* Gebook - Color system
+ * ----------------------------------------------------------------------------
+ * Gebook Palette (Specified by User):
+ *   - Light Sky Cyan:     #A0E9FF
+ *   - Electric Blue:      #116AF8 (Primary Action / Button)
+ *   - Ice Blue Tint:      #CDF5FD (Background / Card Glow / Badges)
+ *   - Bright Cyan:        #20BCED (Secondary Action / Highlighting)
+ *   - Deep Midnight Navy: #020D33 (Dark Theme Background / Text Ink)
+ *   - Gray / Soft Slate:  #F0F8FC / #E5EFF7 (Light Theme Surfaces)
+ *   - Dark:               #020D33 (Dark Theme Base)
+ */
+
+:root {
+  /* - Base Ramps -------------------------------------------------- */
+  --white: #ffffff;
+  --midnight: #020d33;
+  --electric-blue: #116af8;
+  --bright-cyan: #20bced;
+  --light-sky: #a0e9ff;
+  --ice-tint: #cdf5fd;
+
+  /* Ink - cool blue-navy slate */
+  --ink-50:  #f0f7fc;
+  --ink-100: #e2f0f9;
+  --ink-150: #d0e7f7;
+  --ink-200: #b5daf4;
+  --ink-300: #88c3ee;
+  --ink-400: #55a3e1;
+  --ink-500: #2f82cb;
+  --ink-600: #1b62a6;
+  --ink-700: #104880;
+  --ink-800: #082d55;
+  --ink-900: #041b36;
+  --ink-950: #020d33;
+
+  /* Electric & Cyan Ramps */
+  --corn-50:  #f0f9ff;
+  --corn-100: #cdf5fd;
+  --corn-200: #a0e9ff;
+  --corn-300: #5ed6fc;
+  --corn-400: #20bced;
+  --corn-500: #116af8;
+  --corn-600: #0a54cb;
+  --corn-700: #063d9a;
+  --corn-800: #04296c;
+
+  /* - Semantic (Light Theme) -------------------------------------- */
+  --radius: 0.875rem;
+
+  --background: #f0f7fb;
+  --foreground: #020d33;
+
+  --card: #ffffff;
+  --card-foreground: #020d33;
+  --popover: #ffffff;
+  --popover-foreground: #020d33;
+
+  /* Primary = Electric Royal Blue (#116AF8) */
+  --primary: #116af8;
+  --primary-foreground: #ffffff;
+
+  /* Brand Colors from Palette */
+  --brand: #116af8;
+  --brand-foreground: #ffffff;
+  --brand-muted: color-mix(in srgb, #116af8 12%, transparent);
+  --brand-cyan: #20bced;
+  --brand-sky: #a0e9ff;
+  --brand-ice: #cdf5fd;
+  --brand-midnight: #020d33;
+
+  --secondary: #e5f3fc;
+  --secondary-foreground: #020d33;
+  --muted: #e8f2fa;
+  --muted-foreground: #3f5877;
+  --accent: #cdf5fd;
+  --accent-foreground: #0a56cb;
+
+  /* Status */
+  --info: #20bced;
+  --info-foreground: #04437a;
+  --success: #10b981;
+  --success-foreground: #047857;
+  --warning: #f59e0b;
+  --warning-foreground: #b45309;
+  --destructive: #ef4444;
+  --destructive-foreground: #b91c1c;
+
+  /* Lines & rings */
+  --border: #d4e5f2;
+  --border-strong: #a6c6e0;
+  --input: #d8e8f4;
+  --ring: #116af8;
+
+  /* Sidebar / surfaces */
+  --sidebar: #e5f1fa;
+  --sidebar-foreground: #020d33;
+  --sidebar-accent: #cdf5fd;
+  --sidebar-accent-foreground: #116af8;
+  --sidebar-border: #d4e5f2;
+
+  /* Deterministic avatar fallbacks */
+  --avatar-1-bg: #cdf5fd;
+  --avatar-1-fg: #0a54cb;
+  --avatar-2-bg: color-mix(in srgb, #10b981 18%, #ffffff);
+  --avatar-2-fg: #047857;
+  --avatar-3-bg: color-mix(in srgb, #f59e0b 22%, #ffffff);
+  --avatar-3-fg: #b45309;
+  --avatar-4-bg: color-mix(in srgb, #ef4444 14%, #ffffff);
+  --avatar-4-fg: #b91c1c;
+  --avatar-5-bg: #e2eef8;
+  --avatar-5-fg: #020d33;
+
+  /* Charts */
+  --chart-1: #116af8;
+  --chart-2: #20bced;
+  --chart-3: #a0e9ff;
+  --chart-4: #10b981;
+  --chart-5: #020d33;
+}
+
+.dark {
+  /* - Semantic (Dark Theme) --------------------------------------- */
+  /* Deep Midnight Navy Background (#020D33) */
+  --background: #020d33;
+  --foreground: #edf7fd;
+
+  --card: #051647;
+  --card-foreground: #ffffff;
+  --popover: #081d58;
+  --popover-foreground: #ffffff;
+
+  /* Primary = Bright Cyan (#20BCED) / Electric Blue */
+  --primary: #20bced;
+  --primary-foreground: #020d33;
+
+  --brand: #20bced;
+  --brand-foreground: #020d33;
+  --brand-muted: color-mix(in srgb, #20bced 18%, transparent);
+  --brand-cyan: #20bced;
+  --brand-sky: #a0e9ff;
+  --brand-ice: #cdf5fd;
+  --brand-midnight: #020d33;
+
+  --secondary: #0a2364;
+  --secondary-foreground: #a0e9ff;
+  --muted: #071c50;
+  --muted-foreground: #7ea1cb;
+  --accent: #0e2e80;
+  --accent-foreground: #a0e9ff;
+
+  --info: #20bced;
+  --info-foreground: #a0e9ff;
+
+  --border: #0e2d78;
+  --border-strong: #1a4ba8;
+  --input: #103384;
+  --ring: #20bced;
+
+  --sidebar: #010924;
+  --sidebar-foreground: #8faecf;
+  --sidebar-accent: #092262;
+  --sidebar-accent-foreground: #a0e9ff;
+  --sidebar-border: #0e2d78;
+
+  --avatar-1-bg: color-mix(in srgb, #20bced 24%, #051647);
+  --avatar-1-fg: #a0e9ff;
+  --avatar-2-bg: color-mix(in srgb, #10b981 22%, #051647);
+  --avatar-2-fg: #34d399;
+  --avatar-3-bg: color-mix(in srgb, #f59e0b 22%, #051647);
+  --avatar-3-fg: #fbbf24;
+  --avatar-4-bg: color-mix(in srgb, #ef4444 20%, #051647);
+  --avatar-4-fg: #f87171;
+  --avatar-5-bg: #102a6b;
+  --avatar-5-fg: #e2eef8;
+
+  --shadow-border: 0 0 0 1px color-mix(in srgb, #20bced 20%, transparent);
+  --shadow-border-hover: 0 0 0 1px color-mix(in srgb, #a0e9ff 35%, transparent);
+}

@@ -1,0 +1,283 @@
+{
+  "header": {
+    "renameAria": "Rename trip",
+    "renamePlaceholder": "Trip name",
+    "subtitle": "{{start}} – {{end}} · {{days}} days · {{stops}} stops"
+  },
+  "tabs": {
+    "map": "Map",
+    "schedule": "Schedule",
+    "budget": "Budget",
+    "reservations": "Reservations"
+  },
+  "days": {
+    "all": "All days",
+    "day": "Day {{n}}",
+    "groupLabel": "Day {{n}} · {{date}}",
+    "add": "Add day"
+  },
+  "itinerary": {
+    "title": "Itinerary",
+    "count_one": "{{count}} stop",
+    "count_other": "{{count}} stops"
+  },
+  "detail": {
+    "dayTime": "Day {{day}} · {{time}} · {{dur}}",
+    "free": "Free",
+    "perPerson": "{{amount}} / person",
+    "addedBy": "Added by {{name}}",
+    "noVotes": "No votes yet",
+    "wantThis": "{{count}} of {{total}} want this",
+    "vote": "Vote",
+    "unvote": "Remove vote",
+    "voted": "Voted ✓",
+    "commentsWithCount": "Comments ({{count}})",
+    "commentsEmpty": "Comments - start the discussion",
+    "commentPlaceholder": "Add a comment…",
+    "postComment": "Post",
+    "replyComment": "Reply",
+    "dismissQuote": "Dismiss quote",
+    "backToItinerary": "Itinerary",
+    "justNow": "Just now",
+    "notes": "Notes",
+    "writeTravelogue": "Write in travelogue",
+    "editName": "Edit name",
+    "editArea": "Edit area",
+    "editSchedule": "Edit day, time & duration",
+    "editCategory": "Change type",
+    "editCost": "Edit cost",
+    "editNote": "Edit notes",
+    "expandNote": "Edit notes in main pane",
+    "noteEditorTitle": "Notes",
+    "noteEditorDescription": "Write with Markdown. Images are embedded in the note.",
+    "noteCloseConfirmTitle": "Save notes?",
+    "noteCloseConfirmDescription": "You have unsaved changes.",
+    "noteCloseDiscard": "Discard",
+    "noteCloseSave": "Save",
+    "noteImageTooLarge": "Image is too large (max 2 MB).",
+    "noteImageUnsupported": "Only PNG, JPEG, and WebP images are supported.",
+    "noteImageUploadFailed": "Could not upload the image. Try again.",
+    "notePlaceholder": "Add notes - Markdown & images supported",
+    "namePlaceholder": "Stop name",
+    "areaPlaceholder": "Area or neighborhood",
+    "dayLabel": "Day",
+    "timeLabel": "Time",
+    "durationLabel": "Duration",
+    "costLabel": "Cost per person"
+  },
+  "schedule": {
+    "insert": "Insert stop",
+    "namePlaceholder": "New stop",
+    "timePlaceholder": "Time · 14:00",
+    "moreOptions": "More options",
+    "durationPlaceholder": "Duration",
+    "categoryPlaceholder": "Type",
+    "areaPlaceholder": "Area or neighborhood",
+    "costPlaceholder": "Est. cost",
+    "currencyLabel": "Currency",
+    "notePlaceholder": "Notes - Markdown & images supported",
+    "add": "Add",
+    "voteCount": "▲ {{count}}",
+    "reorderAria": "Drag to reorder day {{n}}",
+    "dayMenu": {
+      "label": "Day {{n}}",
+      "edit": "Edit info",
+      "delete": "Delete",
+      "useGeneratedLocation": "Use schedule location"
+    },
+    "dayDialog": {
+      "title": "Edit day {{n}}",
+      "description": "Choose the date, location, and color stored on this schedule card.",
+      "date": "Date",
+      "cityLabel": "Location",
+      "cityPlaceholder": "Select location",
+      "colorLabel": "Color",
+      "useGenerated": "Use schedule location: {{location}}",
+      "save": "Save"
+    },
+    "deleteDialog": {
+      "title": "Delete day {{n}}?",
+      "description": "This will permanently remove this day and all its stops. This action cannot be undone.",
+      "confirm": "Delete"
+    },
+    "colorPicker": {
+      "presets": "Quick colors",
+      "custom": "Custom color",
+      "pick": "Pick color {{color}}"
+    }
+  },
+  "category": {
+    "Sight": "Sightseeing",
+    "Food": "Food",
+    "Stay": "Stay",
+    "Shopping": "Shopping",
+    "Activity": "Activity",
+    "Walk": "Walk",
+    "Park": "Park",
+    "Transit": "Transit",
+    "Plan": "Plan"
+  },
+  "pick": {
+    "onMap": "Pick on map",
+    "hint": "Click the map to drop a pin",
+    "searching": "Searching…",
+    "noResults": "No places found",
+    "located": "Located"
+  },
+  "map": {
+    "menu": {
+      "addStop": "Add a stop here",
+      "copyCoords": "Copy coordinates"
+    },
+    "search": {
+      "placeholder": "Search places…"
+    },
+    "popup": {
+      "addStop": "Add stop here"
+    },
+    "locate": "My location",
+    "locateUnavailable": "Location unavailable",
+    "location": {
+      "resolving": "Resolving place…",
+      "now": "Just now",
+      "minutesAgo": "{{count}} min ago",
+      "hoursAgo": "{{count}}h ago"
+    }
+  },
+  "streetView": {
+    "open": "Open street view",
+    "searching": "Finding street view…",
+    "empty": "No nearby street view was found",
+    "searchError": "Could not find street view",
+    "dialog": {
+      "title": "Street view",
+      "description": "Explore the selected place in 360°.",
+      "close": "Close street view",
+      "error": "The interactive street view could not be loaded.",
+      "retry": "Retry"
+    }
+  },
+  "budget": {
+    "total": "Trip total",
+    "perPerson": "Avg / person",
+    "expenses": "Expenses",
+    "expenseList": "Expenses",
+    "addExpense": "Add expense",
+    "descPlaceholder": "What was it for?",
+    "amountPlaceholder": "Amount",
+    "payer": "Paid by",
+    "splitWith": "Split with",
+    "currencyLabel": "Currency",
+    "categoryLabel": "Type",
+    "categoryPlaceholder": "Type",
+    "save": "Save expense",
+    "editExpense": "Edit expense {{name}}",
+    "paidBy": "Paid by {{name}} · {{when}} · split {{count}} ways",
+    "paidByYou": "you",
+    "each": "{{amount}} each",
+    "balances": "Balances",
+    "balanceSub": "paid {{paid}} · share {{share}}",
+    "you": "{{name}} (you)",
+    "settleUp": "Settle up",
+    "settleCurrencyLabel": "Settlement currency",
+    "transfersClear_one": "{{count}} transfer clears the whole trip",
+    "transfersClear_other": "{{count}} transfers clear the whole trip",
+    "everyonePaid": "Everyone paid, nothing else owed once these clear.",
+    "owes": "owes",
+    "fx": {
+      "title": "Exchange rate",
+      "rateAria": "Exchange rate from {{from}} to {{to}}",
+      "converted": "{{original}} → {{converted}}",
+      "asOf": "{{provider}} · {{date}}",
+      "loading": "Loading exchange rate…",
+      "unavailable": "Exchange rate unavailable."
+    },
+    "derivation": {
+      "aria": "How {{from}} pays {{to}} {{amount}} is calculated",
+      "owesTitle": "{{name}} owes the group",
+      "owedTitle": "{{name}} is owed",
+      "fairShare": "Fair share",
+      "paid": "Paid",
+      "owes": "Owes",
+      "owed": "Is owed",
+      "transfer": "This transfer",
+      "rule": "{{from}} pays {{to}} the smaller of the two open balances:"
+    }
+  },
+  "splitter": {
+    "sidebarLabel": "Resize itinerary sidebar"
+  },
+  "reservations": {
+    "title": "Reservations",
+    "subtitle": "Flights, stays, tables, and tickets in one timeline.",
+    "add": "Add reservation",
+    "edit": "Edit reservation",
+    "empty": "No reservations yet",
+    "emptyHint": "Keep confirmation details next to the plan so everyone can find them.",
+    "unscheduled": "Unscheduled",
+    "day": "Day {{day}}",
+    "loading": "Loading reservations…",
+    "loadError": "Reservations could not be loaded.",
+    "retry": "Try again",
+    "save": "Save reservation",
+    "saving": "Saving…",
+    "cancel": "Cancel booking",
+    "delete": "Delete",
+    "close": "Close",
+    "conflict": "This reservation changed elsewhere. Review the latest version before trying again.",
+    "saveError": "Reservation could not be saved.",
+    "labels": {
+      "type": "Type",
+      "status": "Status",
+      "name": "Name",
+      "provider": "Provider",
+      "confirmation": "Confirmation number",
+      "start": "Starts",
+      "end": "Ends",
+      "timezone": "Timezone",
+      "location": "Location",
+      "day": "Trip day",
+      "stop": "Linked stop",
+      "amount": "Amount",
+      "currency": "Currency",
+      "notes": "Notes"
+    },
+    "types": {
+      "flight": "Flight",
+      "accommodation": "Accommodation",
+      "restaurant": "Restaurant",
+      "rail": "Rail",
+      "ground_transport": "Ground transport",
+      "activity": "Activity",
+      "other": "Other"
+    },
+    "statuses": {
+      "tentative": "Tentative",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "completed": "Completed"
+    },
+    "placeholders": {
+      "name": "Flight number, hotel, restaurant…",
+      "provider": "Airline, property, operator…",
+      "confirmation": "Booking reference",
+      "location": "Terminal, address, meeting point…",
+      "notes": "Check-in details, policies, useful context…",
+      "noStop": "No linked stop"
+    }
+  },
+  "members": {
+    "title": "Travelers"
+  },
+  "weather": {
+    "tooltip": {
+      "temp": "Temp",
+      "feelsLike": "Feels like",
+      "humidity": "Humidity",
+      "wind": "Wind"
+    }
+  },
+  "nav": {
+    "label": "Trip sections"
+  }
+}

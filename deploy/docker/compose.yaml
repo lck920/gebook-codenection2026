@@ -1,0 +1,112 @@
+name: opentrip
+
+services:
+    postgres:
+        image: postgres:16-alpine
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER:-opentrip}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-opentrip}
+            POSTGRES_DB: ${POSTGRES_DB:-opentrip}
+        volumes:
+            - opentrip-pgdata:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-opentrip}"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+        ports:
+            - "${POSTGRES_PORT:-5430}:5432"
+
+    # Optional MySQL backend. Start with:
+    #   docker compose --profile mysql up -d mysql
+    # and set DATABASE_PROVIDER=mysql + DATABASE_URL accordingly.
+    mysql:
+        image: mysql:8.4
+        profiles: ["mysql"]
+        environment:
+            MYSQL_USER: ${MYSQL_USER:-opentrip}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD:-opentrip}
+            MYSQL_DATABASE: ${MYSQL_DATABASE:-opentrip}
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-opentrip}
+        volumes:
+            - opentrip-mysqldata:/var/lib/mysql
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "mysqladmin ping -h 127.0.0.1 -u${MYSQL_USER:-opentrip} -p${MYSQL_PASSWORD:-opentrip} --silent",
+                ]
+            interval: 5s
+            timeout: 5s
+            retries: 20
+        ports:
+            - "${MYSQL_PORT:-3306}:3306"
+
+    api:
+        build:
+            context: ../..
+            dockerfile: deploy/docker/api.Dockerfile
+        environment:
+            DATABASE_PROVIDER: ${DATABASE_PROVIDER:-postgres}
+            DATABASE_URL: ${DATABASE_URL:-postgres://${POSTGRES_USER:-opentrip}:${POSTGRES_PASSWORD:-opentrip}@postgres:5432/${POSTGRES_DB:-opentrip}}
+            BASE_URL: ${BASE_URL:-http://localhost:8090}
+            BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+            TRUSTED_ORIGINS: ${WEB_ORIGIN:-http://localhost:8090}
+            GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+            GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+            WECHAT_WEB_APP_ID: ${WECHAT_WEB_APP_ID}
+            WECHAT_WEB_APP_SECRET: ${WECHAT_WEB_APP_SECRET}
+            WECHAT_MINI_PROGRAM_APP_ID: ${WECHAT_MINI_PROGRAM_APP_ID}
+            WECHAT_MINI_PROGRAM_APP_SECRET: ${WECHAT_MINI_PROGRAM_APP_SECRET}
+            EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+            EMAIL_FROM: ${EMAIL_FROM:-OpenTrip <noreply@localhost>}
+            RESEND_API_KEY: ${RESEND_API_KEY}
+            STORAGE_BACKEND: ${STORAGE_BACKEND:-fs}
+            STORAGE_ROOT: ${STORAGE_ROOT:-/app/apps/api/uploads}
+            AI_PROVIDER: ${AI_PROVIDER:-openai}
+            AI_MODEL: ${AI_MODEL}
+            AI_BASE_URL: ${AI_BASE_URL}
+            AI_API_KEY: ${AI_API_KEY}
+            AI_PROACTIVE_THRESHOLD: ${AI_PROACTIVE_THRESHOLD:-0.7}
+            AI_MAX_TOOL_STEPS: ${AI_MAX_TOOL_STEPS:-16}
+            AI_TELEMETRY_RECORD_CONTENT: ${AI_TELEMETRY_RECORD_CONTENT:-false}
+            SENTRY_DSN: ${SENTRY_DSN:-}
+            SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-development}
+            SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+            STREET_VIEW_PROVIDER: ${STREET_VIEW_PROVIDER}
+            MAPILLARY_ACCESS_TOKEN: ${MAPILLARY_ACCESS_TOKEN}
+            STREET_VIEW_TIMEOUT_MS: ${STREET_VIEW_TIMEOUT_MS:-12000}
+            PORT: "8780"
+        volumes:
+            - opentrip-uploads:/app/apps/api/uploads
+        depends_on:
+            postgres:
+                condition: service_healthy
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "wget -qO- http://localhost:8780/api/health || exit 1",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        ports:
+            - "8780:8780"
+
+    web:
+        build:
+            context: ../..
+            dockerfile: deploy/docker/web.Dockerfile
+            args:
+                # Browser-visible origin; nginx proxies /api to the api service.
+                BASE_URL: ${BASE_URL:-http://localhost:8090}
+        depends_on:
+            - api
+        ports:
+            - "8090:80"
+
+volumes:
+    opentrip-pgdata:
+    opentrip-mysqldata:
+    opentrip-uploads:

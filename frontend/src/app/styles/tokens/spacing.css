@@ -1,0 +1,72 @@
+/* cossUI — Radius, spacing & elevation
+ * ----------------------------------------------------------------------------
+ * coss leans on hairline borders + a faint top-highlight rather than heavy
+ * shadows. Radii step around a 10px base; the signature card is rounded-2xl.
+ */
+
+:root {
+  /* Radius — base 0.625rem (10px) */
+  --radius-xs: 0.25rem;                       /* 4px  — small badge          */
+  --radius-sm: calc(var(--radius) - 4px);     /* 6px  — badge, checkbox      */
+  --radius-md: calc(var(--radius) - 2px);     /* 8px  — xs/xl button         */
+  --radius-lg: var(--radius);                 /* 10px — button, input        */
+  --radius-xl: calc(var(--radius) + 4px);     /* 14px — alert, popover       */
+  --radius-2xl: 1rem;                         /* 16px — card                 */
+  --radius-full: 9999px;
+
+  /* Spacing — 4px base step */
+  --space-0\.5: 0.125rem;  /* 2px  */
+  --space-1: 0.25rem;      /* 4px  */
+  --space-1\.5: 0.375rem;  /* 6px  */
+  --space-2: 0.5rem;       /* 8px  */
+  --space-3: 0.75rem;      /* 12px */
+  --space-4: 1rem;         /* 16px */
+  --space-5: 1.25rem;      /* 20px */
+  --space-6: 1.5rem;       /* 24px */
+  --space-8: 2rem;         /* 32px */
+  --space-10: 2.5rem;      /* 40px */
+  --space-12: 3rem;        /* 48px */
+  --space-16: 4rem;        /* 64px */
+
+  /* Elevation — restrained, cool-tinted */
+  --shadow-xs: 0 1px 2px -1px color-mix(in srgb, var(--ink-950) 8%, transparent);
+  --shadow-sm: 0 1px 3px -1px color-mix(in srgb, var(--ink-950) 10%, transparent),
+    0 1px 2px -1px color-mix(in srgb, var(--ink-950) 6%, transparent);
+  --shadow-md: 0 4px 12px -2px color-mix(in srgb, var(--ink-950) 12%, transparent);
+  --shadow-lg: 0 12px 32px -6px color-mix(in srgb, var(--ink-950) 16%, transparent);
+
+  /* The coss top-highlight: a 1px inner line that makes solid surfaces read
+     as lit from above. Pair with a hairline border. */
+  --highlight-top: inset 0 1px 0 color-mix(in srgb, var(--white) 14%, transparent);
+  --highlight-inset: inset 0 1px 0 color-mix(in srgb, var(--ink-950) 4%, transparent);
+
+  /* Shadow-as-border — three layers: a 1px ring + lift + ambient depth. Use on
+     elevated / interactive surfaces (cards, dropdowns) that sit on varied
+     backgrounds, where a solid border colour wouldn't adapt. Pure-black alphas
+     so the ring never tints the surface beneath it. Keep real borders for
+     dividers and input outlines. (Dark-mode variants live in colors.css.) */
+  --shadow-border:
+    0 0 0 1px color-mix(in srgb, #000 6%, transparent),
+    0 1px 2px -1px color-mix(in srgb, #000 6%, transparent),
+    0 2px 4px 0 color-mix(in srgb, #000 4%, transparent);
+  --shadow-border-hover:
+    0 0 0 1px color-mix(in srgb, #000 8%, transparent),
+    0 1px 2px -1px color-mix(in srgb, #000 8%, transparent),
+    0 2px 4px 0 color-mix(in srgb, #000 6%, transparent);
+
+  /* Focus ring — cornflower */
+  --ring-width: 3px;
+  --ring-offset: 1px;
+
+  /* Motion — single source of truth for durations, easing, and press scale.
+     Durations stay under 300ms for UI (Emil Kowalski craft bar); icon cross-
+     fades are the one 300ms exception. Consume these everywhere instead of
+     hardcoding milliseconds or cubic-beziers. */
+  --press-scale: 0.96; /* @kind other */
+  --ease-out: cubic-bezier(0.2, 0, 0, 1); /* @kind other — strong ease-out for UI */
+  --dur-fast: 120ms; /* @kind other — taps, color/background swaps */
+  --dur-base: 150ms; /* @kind other — default UI transition */
+  --dur-slow: 200ms; /* @kind other — popovers, dialogs, menus */
+  --dur-icon: 300ms; /* @kind other — icon cross-fade only */
+  --enter-stagger: 60ms; /* @kind other — list stagger step (30-80ms) */
+}

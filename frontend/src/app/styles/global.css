@@ -1,0 +1,560 @@
+/* Global stylesheet entry: tailwind + cossUI tokens mapped to the theme.
+ * Order mirrors the handoff: fonts -> colors -> typography -> spacing. */
+@import "tailwindcss";
+@import "./tokens/fonts.css";
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "streamdown/styles.css";
+
+/* Streamdown ships utility classes in its dist; scan them for Tailwind v4. */
+@source "../../node_modules/streamdown/dist/*.js";
+
+/* Dark mode is class-based (.dark on <html>). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Map cossUI semantic tokens to Tailwind theme utilities so classes like
+ * bg-card, text-muted-foreground, rounded-2xl, font-heading resolve to tokens. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-muted: var(--brand-muted);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-corn-300: var(--corn-300);
+  --color-corn-500: var(--corn-500);
+  --color-corn-600: var(--corn-600);
+  --color-ink-150: var(--ink-150);
+  --color-ink-500: var(--ink-500);
+  --color-ink-600: var(--ink-600);
+
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+  --font-mono: var(--font-mono);
+
+  /* Expose the 16px step of the coss type scale as a `text-md` utility.
+   * Text controls need it below `md`: iOS Safari auto-zooms the page when a
+   * focused text control is smaller than 16px, and the overridden `text-sm`
+   * (13px) / `text-base` (14px) steps are both under that threshold. */
+  --text-md: var(--text-md);
+  --text-md--line-height: var(--leading-normal);
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  --ease-out: var(--ease-out);
+
+  --duration-fast: var(--dur-fast);
+  --duration-base: var(--dur-base);
+  --duration-slow: var(--dur-slow);
+  --duration-icon: var(--dur-icon);
+}
+
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background: var(--background);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  text-rendering: optimizeLegibility;
+}
+
+/* Text wrapping — balance headings, pretty body (make-interfaces-feel-better). */
+h1, h2, h3, h4 {
+  text-wrap: balance;
+  font-family: var(--font-heading);
+}
+p, li, figcaption, blockquote, dd {
+  text-wrap: pretty;
+}
+
+/* Numerics — Paper Mono, tabular so changing numbers never shift layout. */
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* cossUI: no focus glow/ring highlight. Interaction feedback is conveyed by
+ * hover, border, and background changes (see Input/Autocomplete), so the
+ * browser's default focus outline is removed app-wide. */
+*:focus,
+*:focus-visible {
+  outline: none;
+}
+
+/* Neutral 1px inset outline on images, pure black/white only. */
+img {
+  outline: 1px solid rgba(0, 0, 0, 0.1);
+  outline-offset: -1px;
+}
+.dark img {
+  outline-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Respect reduced-motion: keep opacity/color transitions (they aid
+ * comprehension) but neutralize movement. Reduced motion means gentler, not
+ * zero. Movement-based utilities opt out explicitly below. */
+@media (prefers-reduced-motion: reduce) {
+  .wf-enter,
+  .wf-exit {
+    animation: none !important;
+  }
+  .wf-icon-swap > * {
+    transition-property: opacity !important;
+  }
+  /* Drop transform-based movement everywhere; keep opacity/color fades. */
+  *,
+  *::before,
+  *::after {
+    transition-property: opacity, color, background-color, border-color !important;
+  }
+}
+
+/* Markdown notes (stop detail). Minimal, token-based typography. */
+.wf-markdown > :first-child {
+  margin-top: 0;
+}
+.wf-markdown > :last-child {
+  margin-bottom: 0;
+}
+.wf-markdown p {
+  margin: 0.5em 0;
+}
+.wf-markdown h1,
+.wf-markdown h2,
+.wf-markdown h3 {
+  margin: 0.8em 0 0.4em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.wf-markdown h1 { font-size: 1.05rem; }
+.wf-markdown h2 { font-size: 1rem; }
+.wf-markdown h3 { font-size: 0.9rem; }
+.wf-markdown ul,
+.wf-markdown ol {
+  margin: 0.5em 0;
+  padding-left: 1.25em;
+}
+.wf-markdown ul { list-style: disc; }
+.wf-markdown ol { list-style: decimal; }
+.wf-markdown li { margin: 0.2em 0; }
+.wf-markdown a {
+  color: var(--corn-600);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.wf-markdown img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  margin: 0.5em 0;
+}
+.wf-markdown code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--secondary);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-xs);
+}
+.wf-markdown pre {
+  background: var(--secondary);
+  padding: 0.75em;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+.wf-markdown pre code {
+  background: none;
+  padding: 0;
+}
+.wf-markdown blockquote {
+  border-left: 3px solid var(--border-strong);
+  padding-left: 0.75em;
+  color: var(--muted-foreground);
+  margin: 0.5em 0;
+}
+.wf-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  font-size: 0.9em;
+}
+.wf-markdown th,
+.wf-markdown td {
+  border: 1px solid var(--border);
+  padding: 0.35em 0.5em;
+  text-align: left;
+}
+.wf-markdown th {
+  font-weight: 600;
+  background: var(--secondary);
+}
+.wf-markdown hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0.75em 0;
+}
+.wf-markdown strong {
+  font-weight: 600;
+}
+
+/* Markdown notes may be long-form; prefer standard wrapping over pretty so
+ * the author-controlled line breaks and long paragraphs stay readable. */
+.wf-markdown p,
+.wf-markdown li {
+  text-wrap: wrap;
+}
+
+/* Press feedback — tactile scale on any pressable surface. Single source for
+ * the ~30 controls that previously hardcoded `active:scale-[0.96]`. */
+.wf-pressable {
+  transition: scale var(--dur-base) var(--ease-out);
+}
+.wf-pressable:active {
+  scale: var(--press-scale);
+}
+
+/* Duolingo-inspired Tactile 3D Buttons & Controls */
+.wf-tactile-btn {
+  position: relative;
+  transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.1s ease;
+  box-shadow: 0 4px 0 #0947b3;
+}
+.wf-tactile-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #0947b3;
+}
+
+.wf-tactile-btn-cyan {
+  position: relative;
+  transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.1s ease;
+  box-shadow: 0 4px 0 #1293be;
+}
+.wf-tactile-btn-cyan:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #1293be;
+}
+
+.wf-tactile-btn-white {
+  position: relative;
+  transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.1s ease;
+  box-shadow: 0 4px 0 rgba(2, 13, 51, 0.12);
+}
+.wf-tactile-btn-white:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(2, 13, 51, 0.12);
+}
+
+.wf-tactile-btn-dark {
+  position: relative;
+  transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.1s ease;
+  box-shadow: 0 4px 0 #010617;
+}
+.wf-tactile-btn-dark:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #010617;
+}
+
+.wf-tactile-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.wf-tactile-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(17, 106, 248, 0.12);
+}
+
+/* Interactive surface — background/color feedback + press scale. GPU-only
+ * properties (no box-shadow) so hover never risks dropped frames. */
+.wf-interactive {
+  transition:
+    background-color var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out),
+    scale var(--dur-base) var(--ease-out);
+}
+.wf-interactive:active {
+  scale: var(--press-scale);
+}
+
+/* Form field — background + border feedback for inputs/textareas/selects. */
+.wf-field {
+  transition:
+    background-color var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
+}
+
+/* Staggered enter used by lists/cards. Kept under 300ms. */
+@keyframes wf-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.wf-enter {
+  animation: wf-enter var(--dur-slow) var(--ease-out) both;
+}
+
+/* Per-item stagger for semantic chunks. Apply `.wf-enter-stagger` to the parent
+ * and `.wf-enter` to each child; delays step by `--enter-stagger`. This is the
+ * one place list stagger is expressed — children never hardcode delays. */
+.wf-enter-stagger > .wf-enter:nth-child(1) { animation-delay: calc(var(--enter-stagger) * 0); }
+.wf-enter-stagger > .wf-enter:nth-child(2) { animation-delay: calc(var(--enter-stagger) * 1); }
+.wf-enter-stagger > .wf-enter:nth-child(3) { animation-delay: calc(var(--enter-stagger) * 2); }
+.wf-enter-stagger > .wf-enter:nth-child(4) { animation-delay: calc(var(--enter-stagger) * 3); }
+.wf-enter-stagger > .wf-enter:nth-child(5) { animation-delay: calc(var(--enter-stagger) * 4); }
+.wf-enter-stagger > .wf-enter:nth-child(6) { animation-delay: calc(var(--enter-stagger) * 5); }
+.wf-enter-stagger > .wf-enter:nth-child(7) { animation-delay: calc(var(--enter-stagger) * 6); }
+.wf-enter-stagger > .wf-enter:nth-child(8) { animation-delay: calc(var(--enter-stagger) * 7); }
+
+/* Scroll reveal — sections lift and fade in the first time they enter the
+ * viewport. Driven by an IntersectionObserver that flips `data-shown`, so the
+ * transition is interruptible and never fires on load for above-the-fold
+ * content. Movement is transform/opacity only (GPU); reduced motion keeps the
+ * fade but drops the lift. Optional `--reveal-delay` staggers siblings. */
+.wf-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: transform, opacity;
+}
+.wf-reveal[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wf-reveal {
+    transform: none;
+  }
+}
+
+/* Exit animation — shorter than enter, lifts up and fades out (no blur; blur
+ * is reserved for the icon cross-fade where it masks overlapping glyphs). */
+@keyframes wf-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+.wf-exit {
+  animation: wf-exit var(--dur-slow) var(--ease-out) both;
+}
+
+/* Contextual icon cross-fade. Both icons live in the DOM; the second icon is
+ * absolutely overlaid and revealed when the container is active (state-driven)
+ * or, on fine pointers only, on hover. Consumed by the IconSwap primitive and
+ * any `[data-state]` toggle — the single cross-fade implementation. */
+.wf-icon-swap {
+  position: relative;
+  display: inline-flex;
+}
+.wf-icon-swap > * {
+  transition:
+    opacity var(--dur-icon) var(--ease-out),
+    transform var(--dur-icon) var(--ease-out),
+    filter var(--dur-icon) var(--ease-out);
+}
+.wf-icon-swap > *:first-child {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+}
+.wf-icon-swap > *:last-child {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: scale(0.25);
+  filter: blur(4px);
+}
+.wf-icon-swap[data-state="active"] > *:first-child {
+  opacity: 0;
+  transform: scale(0.25);
+  filter: blur(4px);
+}
+.wf-icon-swap[data-state="active"] > *:last-child {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+}
+@media (hover: hover) and (pointer: fine) {
+  .wf-icon-swap[data-hover-swap]:hover > *:first-child {
+    opacity: 0;
+    transform: scale(0.25);
+    filter: blur(4px);
+  }
+  .wf-icon-swap[data-hover-swap]:hover > *:last-child {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Overlay scrollbar — thin, borderless. The track is fully transparent so no
+ * divider/gutter line reads as a border, and the thumb is a floating rounded
+ * pill (inset via a transparent border + padding-box clip) that darkens on
+ * hover. Single source for every `.scrollbar-overlay` surface. */
+.scrollbar-overlay {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--foreground) 18%, transparent)
+    transparent;
+}
+.scrollbar-overlay::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.scrollbar-overlay::-webkit-scrollbar-track,
+.scrollbar-overlay::-webkit-scrollbar-corner {
+  background: transparent;
+  border: none;
+}
+.scrollbar-overlay::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--foreground) 18%, transparent);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 9999px;
+}
+.scrollbar-overlay::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklab, var(--foreground) 32%, transparent);
+}
+
+/* Hidden scrollbar — content still scrolls (wheel/trackpad/drag) but no
+ * scrollbar chrome renders. For pill/tab strips where a visible bar reads as
+ * clutter under the controls. */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* ScrollEdgeFade — soft edge masks driven by --scroll-fade-start/end (px).
+ * Mask width interpolates with ease-out so fades grow/shrink as edges open. */
+.wf-scroll-edge-fade {
+  --scroll-fade-start: 0px;
+  --scroll-fade-end: 0px;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--scroll-fade-start),
+    #000 calc(100% - var(--scroll-fade-end)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--scroll-fade-start),
+    #000 calc(100% - var(--scroll-fade-end)),
+    transparent 100%
+  );
+  transition:
+    --scroll-fade-start var(--dur-slow) var(--ease-out),
+    --scroll-fade-end var(--dur-slow) var(--ease-out);
+}
+.wf-scroll-edge-fade[data-orientation="vertical"] {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--scroll-fade-start),
+    #000 calc(100% - var(--scroll-fade-end)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--scroll-fade-start),
+    #000 calc(100% - var(--scroll-fade-end)),
+    transparent 100%
+  );
+}
+@property --scroll-fade-start {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+@property --scroll-fade-end {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wf-scroll-edge-fade {
+    transition: none;
+  }
+}
+
+/* Base UI Collapsible panel — animate height between 0 and the measured
+ * content height (`--collapsible-panel-height`). The panel clips its content
+ * so an inner scroll container can cap its own height independently. */
+.wf-collapsible-panel {
+  height: var(--collapsible-panel-height);
+  overflow: hidden;
+  transition: height var(--dur-base) var(--ease-out);
+}
+.wf-collapsible-panel[data-starting-style],
+.wf-collapsible-panel[data-ending-style] {
+  height: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wf-collapsible-panel {
+    transition: none;
+  }
+}

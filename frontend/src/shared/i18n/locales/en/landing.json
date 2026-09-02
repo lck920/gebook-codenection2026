@@ -1,0 +1,62 @@
+{
+  "nav": {
+    "signIn": "Sign in",
+    "getStarted": "Jom Plan"
+  },
+  "hero": {
+    "title": "Smash your travel plans, not your mood.",
+    "subtitle": "AI-powered itineraries, kira-kira split bill, and instant re-planning when rain spoils your jalan-jalan. Steady, smart, and zero drama.",
+    "primary": "Jom Start Planning",
+    "secondary": "I already have an account",
+    "imageAlt": "Gebook interactive map and smart travel planner"
+  },
+  "facts": {
+    "label": "Featured escape",
+    "days": "5 days",
+    "stops": "25 stops",
+    "route": "Tokyo → Kyoto → Osaka"
+  },
+  "features": {
+    "map": {
+      "title": "The whole trip on one interactive map.",
+      "body": "Every stop, pinned and numbered. From airport transit to hidden makan spots, check live weather and discover must-visit gems nearby.",
+      "imageAlt": "Gebook itinerary map with numbered stops and routes"
+    },
+    "schedule": {
+      "title": "Day-by-day jalan-jalan at a glance.",
+      "body": "One clean schedule per day - what time to move, which transit to take, where to lepak. Everything synced nicely for solo or geng trips.",
+      "imageAlt": "Day-by-day schedule with stop cards"
+    },
+    "budget": {
+      "title": "Kira-kira split bill without the drama.",
+      "body": "No more 'eh bro, transfer me later'. Log expenses as they happen - Gebook auto-splits costs and calculates the optimal settle-up in RM, SGD, JPY, or any currency.",
+      "imageAlt": "Shared expenses with multi-currency balance split"
+    },
+    "agent": {
+      "title": "Hujan or flight delay? Re-plan on the fly.",
+      "body": "Sudden downpour or delayed flight? Don't panic lah. Gebook AI re-routes your schedule to top indoor spots in seconds with one-click approval.",
+      "imageAlt": "Gebook AI agent suggesting real-time itinerary changes"
+    },
+    "collaborate": {
+      "title": "Sync preferences & vote together.",
+      "body": "No more 500 WhatsApp messages asking 'makan mana?'. Combine geng preferences, vote on activities, and share one simple invite link.",
+      "imageAlt": "Group preference consensus and voting"
+    }
+  },
+  "mobile": {
+    "title": "Your pocket travel companion everywhere you jalan.",
+    "body": "Access your schedule, offline maps, and group expenses anywhere in the world on your mobile phone.",
+    "mapAlt": "Gebook mobile map",
+    "scheduleAlt": "Gebook mobile schedule",
+    "agentAlt": "Gebook mobile trip assistant"
+  },
+  "cta": {
+    "title": "Your next cuti is calling.",
+    "subtitle": "Join travellers planning stress-free adventures with Gebook - from weekend getaways to dream vacations.",
+    "button": "Jom Plan with Gebook"
+  },
+  "footer": {
+    "tagline": "Gebook - Gepuk the chaos, book the dream.",
+    "copyright": "© 2026 Gebook. All rights reserved."
+  }
+}
