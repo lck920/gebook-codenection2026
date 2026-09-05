@@ -86,6 +86,15 @@ export function AuthForm({ mode: externalMode, onModeChange }: AuthFormProps) {
     return () => clearInterval(timer);
   }, [resendIn]);
 
+  /**
+   * True only when the request never reached the API — DNS/offline/connection
+   * refused, which `fetch` reports as a TypeError. A 4xx from the server is a
+   * real answer and must never be mistaken for "the backend is down".
+   */
+  function isNetworkFailure(err: unknown): boolean {
+    return err instanceof TypeError;
+  }
+
   function showAuthError() {
     toastManager.add({
       title: t("errors.toastTitle"),
@@ -157,25 +166,39 @@ export function AuthForm({ mode: externalMode, onModeChange }: AuthFormProps) {
 
     setPending(true);
     try {
+      // The local test session is an offline development fallback, so it may
+      // only be entered when the API is genuinely unreachable. Falling back on
+      // a *rejected* credential would sign the visitor into a shared
+      // browser-local fixture under whatever email they typed, which reads as
+      // "every account sees the same trips".
+      let unreachable = false;
+      const onFailure = (err: unknown) => {
+        unreachable = isNetworkFailure(err);
+        return null;
+      };
+
       if (isSignUp) {
         const result = await signUp.email({
           name: name || "Danial",
           email,
           password,
-        }).catch(() => null);
+        }).catch(onFailure);
         if (result && !result.error) {
           enterOtpStep();
           return;
         }
-        // If backend database is offline, start local test session seamlessly
-        setLocalTestSession({ name: name || "Danial", email });
+        if (unreachable) {
+          setLocalTestSession({ name: name || "Danial", email });
+          return;
+        }
+        showAuthError();
         return;
       }
 
       const result = await signIn.email({
         email,
         password,
-      }).catch(() => null);
+      }).catch(onFailure);
       if (result && !result.error) {
         return;
       }
@@ -183,10 +206,17 @@ export function AuthForm({ mode: externalMode, onModeChange }: AuthFormProps) {
         enterOtpStep();
         return;
       }
-      // If backend database is offline or credentials error, log in to local test session
-      setLocalTestSession({ email });
-    } catch {
-      setLocalTestSession({ email });
+      if (unreachable) {
+        setLocalTestSession({ email });
+        return;
+      }
+      showAuthError();
+    } catch (err) {
+      if (isNetworkFailure(err)) {
+        setLocalTestSession({ email });
+        return;
+      }
+      showAuthError();
     } finally {
       setPending(false);
     }
@@ -234,9 +264,13 @@ export function AuthForm({ mode: externalMode, onModeChange }: AuthFormProps) {
       if (result.error) {
         showOtpError();
       }
-    } catch {
-      // Dev mode fallback
-      setLocalTestSession({ name: name || "Danial", email });
+    } catch (err) {
+      // Offline dev fallback only; a rejected code must stay rejected.
+      if (isNetworkFailure(err)) {
+        setLocalTestSession({ name: name || "Danial", email });
+        return;
+      }
+      showOtpError();
     } finally {
       setPending(false);
     }

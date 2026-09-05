@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BookOpenTextIcon, Maximize2 } from "lucide-react";
+import { BookOpenTextIcon, Maximize2, Trash2Icon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import type { Trip } from "@/entities/trip";
@@ -600,6 +600,7 @@ export function StopDetail({
   onChangeStopDay,
   onExpandNote,
   onWriteTravelogue,
+  onDeleteStop,
 }: {
   trip: Trip;
   stop: Stop;
@@ -613,6 +614,8 @@ export function StopDetail({
   onChangeStopDay: (stopId: string, day: number) => void;
   onExpandNote: () => void;
   onWriteTravelogue: () => void;
+  /** Omitted where removal is not offered (read-only members, mobile sheet). */
+  onDeleteStop?: () => void;
 }) {
   const { t } = useTranslation("planner");
   const { t: ta } = useTranslation("agent");
@@ -726,6 +729,23 @@ export function StopDetail({
           </svg>
           {t("detail.backToItinerary")}
         </Button>
+        {canEdit && onDeleteStop ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto gap-1.5 px-2 text-muted-foreground hover:text-[var(--danger-fg,#b3261e)]"
+            onClick={() => {
+              // A stop carries votes and comments, and nothing here undoes a
+              // delete — worth one confirmation.
+              if (window.confirm(t("detail.deleteConfirm", { name: stop.name }))) {
+                onDeleteStop();
+              }
+            }}
+          >
+            <Trash2Icon className="size-4" aria-hidden="true" />
+            {t("detail.delete")}
+          </Button>
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-4">

@@ -244,21 +244,50 @@ model trip_invites {
   @@index([trip_id], map: "trip_invites_trip_idx")
 }
 
+model trip_budget_items {
+  id         String   @id
+  trip_id    String
+  label      String
+  category   String   @default("Plan")
+  amount     Int      @default(0)
+  currency   String   @default("")
+  created_by String   @default("")
+  sort_order Int      @default(0)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  trips      trips    @relation(fields: [trip_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([trip_id], map: "trip_budget_items_trip_idx")
+}
+
+model trip_budget_contributions {
+  trip_id      String
+  member_id    String
+  amount       Int          @default(0)
+  currency     String       @default("")
+  updated_at   DateTime     @default(now()) @db.Timestamptz(6)
+  trip_members trip_members @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  trips        trips        @relation(fields: [trip_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([trip_id, member_id])
+  @@index([trip_id], map: "trip_budget_contributions_trip_idx")
+}
+
 model trip_members {
-  id              String  @id
-  trip_id         String
-  name            String
-  short_name      String
-  initials        String
-  avatar_bg       String
-  avatar_fg       String
-  is_current_user Boolean @default(false)
-  sort_order      Int     @default(0)
-  image           String?
-  can_invite      Boolean @default(true)
-  role            String  @default("editor")
-  user_id         String?
-  trips           trips   @relation(fields: [trip_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                        String                      @id
+  trip_id                   String
+  name                      String
+  short_name                String
+  initials                  String
+  avatar_bg                 String
+  avatar_fg                 String
+  is_current_user           Boolean                     @default(false)
+  sort_order                Int                         @default(0)
+  image                     String?
+  can_invite                Boolean                     @default(true)
+  role                      String                      @default("editor")
+  user_id                   String?
+  trips                     trips                       @relation(fields: [trip_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  trip_budget_contributions trip_budget_contributions[]
 
   @@unique([trip_id, user_id], map: "trip_members_trip_user_unique")
   @@index([trip_id], map: "trip_members_trip_idx")
@@ -283,6 +312,8 @@ model trips {
   expenses           expenses[]
   reservations       reservations[]
   stops              stops[]
+  trip_budget_contributions trip_budget_contributions[]
+  trip_budget_items  trip_budget_items[]
   trip_days          trip_days[]
   trip_invites       trip_invites[]
   trip_members       trip_members[]

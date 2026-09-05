@@ -43,3 +43,26 @@ export function buildAgentSeedMessage(
   if (parts.length === 0) return null;
   return t("seed.message", { details: parts.join(t("seed.joiner")) });
 }
+
+/**
+ * The "Plan with AI" draft for a trip with no stops yet.
+ *
+ * Unlike the wizard seed this never returns null: the button only exists on a
+ * real trip, and the title alone is enough for the agent to start from.
+ */
+export function buildPlanTripMessage(
+  t: TFunction<"agent">,
+  trip: {
+    title: string;
+    startDate: string;
+    days: unknown[];
+    intake: TripIntake | null;
+  },
+): string {
+  const destination = trip.intake?.destination?.trim() || trip.title.trim();
+  return t("seed.planTrip", {
+    destination,
+    count: trip.days.length,
+    start: trip.startDate || undefined,
+  });
+}

@@ -132,6 +132,13 @@ export interface MoveStopInput {
   index: number;
 }
 
+/** Remove a stop from the itinerary. Returns the trip without it. */
+export function deleteStop(tripId: string, stopId: string): Promise<Trip> {
+  return apiFetch<Trip>(`/api/trips/${tripId}/stops/${stopId}`, {
+    method: "DELETE",
+  });
+}
+
 export function moveStop(
   tripId: string,
   stopId: string,
@@ -183,6 +190,68 @@ export function updateExpense(
 ): Promise<Trip> {
   return apiFetch<Trip>(`/api/trips/${tripId}/expenses/${expenseId}`, {
     method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+/** Lock the plan (planning → active) or reopen it. */
+export function setTripStatus(
+  tripId: string,
+  status: "planning" | "active" | "settled",
+): Promise<Trip> {
+  return apiFetch<Trip>(`/api/trips/${tripId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export interface BudgetItemInput {
+  label: string;
+  amount: number;
+  currency?: string;
+  category?: string;
+}
+
+export function addBudgetItem(
+  tripId: string,
+  input: BudgetItemInput,
+): Promise<Trip> {
+  return apiFetch<Trip>(`/api/trips/${tripId}/budget-items`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateBudgetItem(
+  tripId: string,
+  itemId: string,
+  input: BudgetItemInput,
+): Promise<Trip> {
+  return apiFetch<Trip>(`/api/trips/${tripId}/budget-items/${itemId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function removeBudgetItem(tripId: string, itemId: string): Promise<Trip> {
+  return apiFetch<Trip>(`/api/trips/${tripId}/budget-items/${itemId}`, {
+    method: "DELETE",
+  });
+}
+
+export interface SetContributionInput {
+  memberId: string;
+  amount: number;
+  currency?: string;
+}
+
+/** Set one traveller's stake in the shared budget pool. Amount 0 clears it. */
+export function setBudgetContribution(
+  tripId: string,
+  input: SetContributionInput,
+): Promise<Trip> {
+  return apiFetch<Trip>(`/api/trips/${tripId}/budget-contributions`, {
+    method: "PUT",
     body: JSON.stringify(input),
   });
 }

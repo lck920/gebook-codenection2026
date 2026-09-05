@@ -23,6 +23,12 @@ export interface TripSummary {
   coverUrl: string | null;
   memberCount: number;
   stopCount: number;
+  /** Stops with a start time set, for the "n of m scheduled" progress read-out. */
+  scheduledStopCount: number;
+  /** Budget captured in the create wizard. Null when the trip never set one. */
+  plannedBudget: number | null;
+  /** Currency of `plannedBudget`; falls back to the trip currency. */
+  plannedBudgetCurrency: string | null;
   /** Creation time as an ISO 8601 string, for a relative "created … ago" label. */
   createdAt: string;
   /** Display name of the trip creator (owner, falling back to the first member). */
@@ -44,6 +50,8 @@ export interface TripRepository {
   create(trip: Trip): Promise<void>;
   /** Append a single member row to an existing trip. */
   addMember(tripId: string, member: MemberSnapshot): Promise<void>;
+  /** Update the trip's lifecycle status on the base row. */
+  setStatus(id: string, status: TripStatus): Promise<void>;
   /** Update the trip's base row title. */
   rename(id: string, title: string): Promise<void>;
   /** Clear the one-shot agent seed pending flag. */

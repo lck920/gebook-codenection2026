@@ -6,6 +6,7 @@ import type {
   TripIntake,
   TripRepository,
   TripSnapshot,
+  TripSection,
   TripStatus,
   TripSummary,
 } from "../../domain/trip";
@@ -56,13 +57,17 @@ export class SqlTripRepository implements TripRepository {
       created_at: string | Date;
       member_count: string | number;
       stop_count: string | number;
+      scheduled_stop_count: string | number;
+      intake: unknown;
       location_lat: string | number | null;
       location_lng: string | number | null;
     }>(
       `SELECT t.id, t.title, t.start_date, t.end_date, t.status, t.currency, t.cover_color,
-              t.cover_url, t.owner_id, t.created_at,
+              t.cover_url, t.owner_id, t.created_at, t.intake,
               (SELECT count(*) FROM trip_members m WHERE m.trip_id = t.id) AS member_count,
               (SELECT count(*) FROM stops s WHERE s.trip_id = t.id) AS stop_count,
+              (SELECT count(*) FROM stops s
+               WHERE s.trip_id = t.id AND s.time <> '') AS scheduled_stop_count,
               (SELECT s.lat FROM stops s
                WHERE s.trip_id = t.id AND s.transit = ${falseLiteral}
                  AND s.lat IS NOT NULL AND s.lng IS NOT NULL
@@ -124,6 +129,7 @@ export class SqlTripRepository implements TripRepository {
         ownerIdx > 0
           ? [all[ownerIdx]!, ...all.slice(0, ownerIdx), ...all.slice(ownerIdx + 1)]
           : all;
+      const intake = parseTripIntake(r.intake);
       const locationLat = r.location_lat != null ? Number(r.location_lat) : null;
       const locationLng = r.location_lng != null ? Number(r.location_lng) : null;
       return {
@@ -137,6 +143,9 @@ export class SqlTripRepository implements TripRepository {
         coverUrl: r.cover_url ?? null,
         memberCount: Number(r.member_count),
         stopCount: Number(r.stop_count),
+        scheduledStopCount: Number(r.scheduled_stop_count),
+        plannedBudget: intake?.budgetAmount ?? null,
+        plannedBudgetCurrency: intake?.budgetCurrency ?? r.currency,
         createdAt: new Date(r.created_at).toISOString(),
         creatorName: members[0]?.name ?? "",
         members,
@@ -170,8 +179,17 @@ export class SqlTripRepository implements TripRepository {
     const base = tripRes.rows[0];
     if (!base) return null;
 
-    const [members, days, stops, votes, comments, expenses, parts] =
-      await Promise.all([
+    const [
+      members,
+      days,
+      stops,
+      votes,
+      comments,
+      expenses,
+      parts,
+      contributions,
+      budgetItems,
+    ] = await Promise.all([
         this.db.query(
           `SELECT id, name, short_name, initials, avatar_bg, avatar_fg, image, is_current_user,
                   user_id, role, can_invite
@@ -205,6 +223,16 @@ export class SqlTripRepository implements TripRepository {
         this.db.query(
           `SELECT ep.expense_id, ep.member_id FROM expense_participants ep
            JOIN expenses e ON e.id = ep.expense_id WHERE e.trip_id = $1`,
+          [id],
+        ),
+        this.db.query(
+          `SELECT member_id, amount, currency
+           FROM trip_budget_contributions WHERE trip_id = $1`,
+          [id],
+        ),
+        this.db.query(
+          `SELECT id, label, category, amount, currency, created_by, sort_order
+           FROM trip_budget_items WHERE trip_id = $1 ORDER BY sort_order ASC`,
           [id],
         ),
       ]);
@@ -306,6 +334,24 @@ export class SqlTripRepository implements TripRepository {
       intake: parseTripIntake(base.intake),
       agentSeedPending: Boolean(base.agent_seed_pending),
       ownerId: base.owner_id,
+      contributions: (
+        contributions.rows as { member_id: string; amount: number; currency: string }[]
+      ).map((c) => ({
+        memberId: c.member_id,
+        amount: Number(c.amount),
+        currency: c.currency ?? "",
+      })),
+      budgetItems: (
+        budgetItems.rows as Array<Record<string, unknown>>
+      ).map((i) => ({
+        id: i.id as string,
+        label: i.label as string,
+        category: (i.category as StopSnapshot["category"]) ?? "Plan",
+        amount: Number(i.amount),
+        currency: (i.currency as string) ?? "",
+        createdBy: (i.created_by as string) ?? "",
+        sortOrder: Number(i.sort_order),
+      })),
       members: (members.rows as Array<Record<string, unknown>>).map((m) => ({
         id: m.id as string,
         name: m.name as string,
@@ -488,6 +534,13 @@ export class SqlTripRepository implements TripRepository {
     );
   }
 
+  async setStatus(id: string, status: string): Promise<void> {
+    await this.db.query(
+      `UPDATE trips SET status = $2, version = version + 1 WHERE id = $1`,
+      [id, status],
+    );
+  }
+
   async clearAgentSeedPending(id: string): Promise<void> {
     await this.db.query(
       `UPDATE trips SET agent_seed_pending = $2, version = version + 1 WHERE id = $1`,
@@ -560,36 +613,106 @@ export class SqlTripRepository implements TripRepository {
 
   async save(trip: Trip): Promise<void> {
     const s = trip.toSnapshot();
+    // Every rewritten collection costs several round trips, which is minutes of
+    // latency against a remote pooler for a trip with a full itinerary. Mutators
+    // that declare what they touched only pay for that part; anything that does
+    // not declare (null) still rewrites everything.
+    const sections = trip.pendingSections();
+    const writes = (section: TripSection) =>
+      sections === null || sections.has(section);
+
     const client = await this.db.connect();
     try {
       await client.query("BEGIN");
-      await client.query(`DELETE FROM stops WHERE trip_id = $1`, [s.id]);
+
+      if (writes("stops")) {
+        await client.query(`DELETE FROM stops WHERE trip_id = $1`, [s.id]);
+        await insertStops(client, s.id, s.stops);
+      }
+
+      if (writes("expenses")) {
       await client.query(`DELETE FROM expenses WHERE trip_id = $1`, [s.id]);
+      await bulkInsert(
+        client,
+        "expenses",
+        [
+          "id",
+          "trip_id",
+          "description",
+          "payer_id",
+          "amount",
+          "currency",
+          "category",
+          "when_label",
+          "sort_order",
+        ],
+        s.expenses.map((e) => [
+          e.id,
+          s.id,
+          e.description,
+          e.payer,
+          e.amount,
+          e.currency,
+          e.category,
+          e.whenLabel,
+          e.createdOrder,
+        ]),
+      );
 
-      await insertStops(client, s.id, s.stops);
+      await bulkInsert(
+        client,
+        "expense_participants",
+        ["expense_id", "member_id"],
+        s.expenses.flatMap((e) =>
+          e.participants.map((memberId) => [e.id, memberId]),
+        ),
+      );
+      }
 
-      for (const e of s.expenses) {
+      if (writes("budgetItems")) {
+      await client.query(`DELETE FROM trip_budget_items WHERE trip_id = $1`, [
+        s.id,
+      ]);
+      await bulkInsert(
+        client,
+        "trip_budget_items",
+        [
+          "id",
+          "trip_id",
+          "label",
+          "category",
+          "amount",
+          "currency",
+          "created_by",
+          "sort_order",
+        ],
+        s.budgetItems.map((item) => [
+          item.id,
+          s.id,
+          item.label,
+          item.category,
+          item.amount,
+          item.currency,
+          item.createdBy,
+          item.sortOrder,
+        ]),
+      );
+
+      }
+
+      if (writes("contributions")) {
+        // Rewritten wholesale: the aggregate owns the full pool, so a removed
+        // member's row disappears with it.
         await client.query(
-          `INSERT INTO expenses (id, trip_id, description, payer_id, amount, currency, category, when_label, sort_order)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-          [
-            e.id,
-            s.id,
-            e.description,
-            e.payer,
-            e.amount,
-            e.currency,
-            e.category,
-            e.whenLabel,
-            e.createdOrder,
-          ],
+          `DELETE FROM trip_budget_contributions WHERE trip_id = $1`,
+          [s.id],
         );
-        for (const memberId of e.participants) {
-          await client.query(
-            `INSERT INTO expense_participants (expense_id, member_id) VALUES ($1,$2)`,
-            [e.id, memberId],
-          );
-        }
+        await bulkInsert(
+          client,
+          "trip_budget_contributions",
+          ["trip_id", "member_id", "amount", "currency"],
+          s.contributions.map((c) => [s.id, c.memberId, c.amount, c.currency]),
+        );
       }
 
       await bumpVersion(client, s.id);
@@ -612,48 +735,105 @@ async function bumpVersion(
   ]);
 }
 
+/** Postgres allows 65535 bind parameters per statement; stay well under it. */
+const MAX_BIND_PARAMS = 60_000;
+
+/**
+ * Insert many rows with one statement per chunk instead of one per row.
+ *
+ * `save` rewrites the whole aggregate, so a trip with 25 stops was issuing
+ * ~100 sequential round trips. Against a pooler in another region that is tens
+ * of seconds of pure latency; batching turns it into a handful of round trips.
+ */
+async function bulkInsert(
+  client: SqlConnection,
+  table: string,
+  columns: readonly string[],
+  rows: readonly unknown[][],
+): Promise<void> {
+  if (rows.length === 0) return;
+
+  const rowsPerChunk = Math.max(1, Math.floor(MAX_BIND_PARAMS / columns.length));
+  for (let start = 0; start < rows.length; start += rowsPerChunk) {
+    const chunk = rows.slice(start, start + rowsPerChunk);
+    const params: unknown[] = [];
+    const tuples = chunk.map(
+      (row) =>
+        `(${row
+          .map((value) => {
+            params.push(value);
+            return `$${params.length}`;
+          })
+          .join(",")})`,
+    );
+    await client.query(
+      `INSERT INTO ${table} (${columns.join(", ")}) VALUES ${tuples.join(", ")}`,
+      params,
+    );
+  }
+}
+
 async function insertStops(
   client: SqlConnection,
   tripId: string,
   stops: readonly StopSnapshot[],
 ): Promise<void> {
-  for (const st of stops) {
-    await client.query(
-      `INSERT INTO stops (id, trip_id, day, time, duration, name, area, category, lat, lng, cost, cost_currency, created_by, transit, note, sort_order)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
-      [
-        st.id,
-        tripId,
-        st.day,
-        st.time,
-        st.duration,
-        st.name,
-        st.area,
-        st.category,
-        st.lat,
-        st.lng,
-        st.cost,
-        st.costCurrency,
-        st.createdBy,
-        st.transit,
-        st.note,
-        st.order,
-      ],
-    );
-    for (const memberId of st.votes) {
-      await client.query(
-        `INSERT INTO stop_votes (stop_id, member_id) VALUES ($1,$2)`,
-        [st.id, memberId],
-      );
-    }
-    for (const c of st.comments) {
-      await client.query(
-        `INSERT INTO stop_comments (stop_id, author_id, text, time_label)
-         VALUES ($1,$2,$3,$4)`,
-        [st.id, c.author, c.text, c.timeLabel],
-      );
-    }
-  }
+  await bulkInsert(
+    client,
+    "stops",
+    [
+      "id",
+      "trip_id",
+      "day",
+      "time",
+      "duration",
+      "name",
+      "area",
+      "category",
+      "lat",
+      "lng",
+      "cost",
+      "cost_currency",
+      "created_by",
+      "transit",
+      "note",
+      "sort_order",
+    ],
+    stops.map((st) => [
+      st.id,
+      tripId,
+      st.day,
+      st.time,
+      st.duration,
+      st.name,
+      st.area,
+      st.category,
+      st.lat,
+      st.lng,
+      st.cost,
+      st.costCurrency,
+      st.createdBy,
+      st.transit,
+      st.note,
+      st.order,
+    ]),
+  );
+
+  await bulkInsert(
+    client,
+    "stop_votes",
+    ["stop_id", "member_id"],
+    stops.flatMap((st) => st.votes.map((memberId) => [st.id, memberId])),
+  );
+
+  await bulkInsert(
+    client,
+    "stop_comments",
+    ["stop_id", "author_id", "text", "time_label"],
+    stops.flatMap((st) =>
+      st.comments.map((c) => [st.id, c.author, c.text, c.timeLabel]),
+    ),
+  );
 }
 
 /** @deprecated Use SqlTripRepository */

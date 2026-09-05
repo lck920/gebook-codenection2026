@@ -1,0 +1,55 @@
+/* Gebook - Dashboard surface palette
+ * ----------------------------------------------------------------------------
+ * The trips redesign ("Turn 2 - soft panel") uses a neutral grey ramp rather
+ * than the app's cyan-tinted light theme: a white shell floating on a soft
+ * ground, with blue reserved for actions. These are the design's own values,
+ * re-pointed at the app's semantic tokens so every component inside the
+ * dashboard picks them up without hard-coded hexes.
+ *
+ * Light theme only - in dark mode the app's own tokens are left alone.
+ */
+
+html:not(.dark) .gb-dashboard {
+  /* Neutral ramp */
+  --n-25: #fbfcfd;
+  --n-50: #f6f7f9;
+  --n-100: #eef0f4;
+  --n-200: #e3e6ec;
+  --n-300: #cfd4dd;
+  --n-500: #5b6675;
+  --n-700: #2c3543;
+  --soft-bg: #eef3f8;
+
+  /* Status pills */
+  --warn-bg: #fff8ec;
+  --warn-fg: #8a5209;
+  --ok-bg: #eefaf4;
+  --ok-fg: #0a6f4d;
+
+  /* Semantic overrides */
+  --background: #ffffff;
+  --foreground: #020d33;
+  --card: #ffffff;
+  --card-foreground: #020d33;
+  --muted: var(--soft-bg);
+  --muted-foreground: var(--n-500);
+  --secondary: var(--n-100);
+  --secondary-foreground: var(--n-700);
+  --accent: #cdf5fd;
+  --accent-foreground: #0a54cb;
+  --border: var(--n-200);
+  --border-strong: var(--n-300);
+  --input: var(--n-200);
+
+  /* The shell sits on the soft ground; the sidebar shares the white panel. */
+  --sidebar: #ffffff;
+  --dashboard-ground: #e9ebef;
+  --sidebar-foreground: #020d33;
+  --sidebar-border: var(--n-200);
+}
+
+/* The sidebar shares the white shell in this design, so the ground colour behind
+ * the whole app moves to its own token. Dark mode keeps the app sidebar colour. */
+.gb-dashboard {
+  --dashboard-ground: var(--sidebar);
+}

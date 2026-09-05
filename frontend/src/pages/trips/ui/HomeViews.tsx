@@ -20,7 +20,8 @@ import { JournalEntryCard } from "./JournalEntryCard";
 import { TripCard } from "./TripCard";
 import { TodayPlaceCard } from "./TodayPlaceCard";
 import { TravellerLevelCard } from "@/entities/gamification";
-import { PopularDestinationsCarousel, type DestinationTemplate } from "./PopularDestinationsCarousel";
+import { type DestinationTemplate } from "@/entities/destination";
+import { PopularDestinationsCarousel } from "./PopularDestinationsCarousel";
 import { ThemeToggle } from "@/features/toggle-theme";
 
 interface TripsDataProps {

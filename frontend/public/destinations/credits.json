@@ -1,0 +1,86 @@
+[
+  {
+    "id": "genin-lake",
+    "file": "Lac Genin 3.jpg",
+    "artist": "Meister",
+    "license": "CC BY-SA 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Lac_Genin_3.jpg"
+  },
+  {
+    "id": "lake-como",
+    "file": "Sentiero del Viandante DSC 6340 (14020554463).jpg",
+    "artist": "Luca Casartelli",
+    "license": "CC BY-SA 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sentiero_del_Viandante_DSC_6340_(14020554463).jpg"
+  },
+  {
+    "id": "banff-park",
+    "file": "Moraine Lake 17092005.jpg",
+    "artist": "Gorgo",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Moraine_Lake_17092005.jpg"
+  },
+  {
+    "id": "kyoto-old-town",
+    "file": "Arashiyama, Part II - Arashiyama7534.jpg",
+    "artist": "lumoplank",
+    "license": "CC0",
+    "source": "https://commons.wikimedia.org/wiki/File:Arashiyama,_Part_II_-_Arashiyama7534.jpg"
+  },
+  {
+    "id": "santorini",
+    "file": "Oia sunset - panoramio (2).jpg",
+    "artist": "TomasEE",
+    "license": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Oia_sunset_-_panoramio_(2).jpg"
+  },
+  {
+    "id": "reykjavik",
+    "file": "Reykjavík, view from Hallgrímskirkja (2).jpg",
+    "artist": "Olga Ernst",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Reykjav%C3%ADk,_view_from_Hallgr%C3%ADmskirkja_(2).jpg"
+  },
+  {
+    "id": "marrakesh",
+    "file": "Pavillon Menaragärten.jpg",
+    "artist": "Acp",
+    "license": "CC BY-SA 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pavillon_Menarag%C3%A4rten.jpg"
+  },
+  {
+    "id": "queenstown",
+    "file": "Queenstown 1 (8168013172).jpg",
+    "artist": "Bernard Spragg. NZ from Christchurch, New Zealand",
+    "license": "CC0",
+    "source": "https://commons.wikimedia.org/wiki/File:Queenstown_1_(8168013172).jpg"
+  },
+  {
+    "id": "ha-long-bay",
+    "file": "Ha Long Bay in 2019.jpg",
+    "artist": "Taewangkorea",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Ha_Long_Bay_in_2019.jpg"
+  },
+  {
+    "id": "machu-picchu",
+    "file": "Machu Picchu, 2023 (012).jpg",
+    "artist": "Draceane",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Machu_Picchu,_2023_(012).jpg"
+  },
+  {
+    "id": "ubud",
+    "file": "Ubud (49818456887).jpg",
+    "artist": "Jorge Franganillo",
+    "license": "CC BY 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Ubud_(49818456887).jpg"
+  },
+  {
+    "id": "langkawi",
+    "file": "Eagle square at Kuah Langkawi.jpg",
+    "artist": "Ttt.Osakanman",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Eagle_square_at_Kuah_Langkawi.jpg"
+  }
+]

@@ -24,6 +24,9 @@ class FakeTripRepository implements TripRepository {
     // The aggregate already added the member; nothing else to persist here.
     return Promise.resolve();
   }
+  setStatus(): Promise<void> {
+    return Promise.resolve();
+  }
   rename(): Promise<void> {
     return Promise.resolve();
   }

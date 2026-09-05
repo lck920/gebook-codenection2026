@@ -155,6 +155,8 @@ function buildJapan(): SeedTrip {
         text: c.text,
       })),
     })),
+    contributions: [],
+    budgetItems: [],
     expenses: RAW_EXPENSES.map((e, i) => ({
       id: e.id,
       description: e.desc,

@@ -16,6 +16,7 @@ import {
   reorderTripDays,
   toggleVote,
   updateStop,
+  deleteStop,
   updateTripDay,
   type AddExpenseInput,
   type InsertStopInput,
@@ -51,6 +52,10 @@ export function useTripActions(tripId: string) {
   const stopUpdate = useMutation({
     mutationFn: (v: { stopId: string; patch: UpdateStopInput }) =>
       updateStop(tripId, v.stopId, v.patch),
+    onSuccess,
+  });
+  const stopDelete = useMutation({
+    mutationFn: (stopId: string) => deleteStop(tripId, stopId),
     onSuccess,
   });
   // Stop movement is optimistic for the same reason as day reorder: the board
@@ -120,6 +125,7 @@ export function useTripActions(tripId: string) {
     comment,
     stop,
     stopUpdate,
+    stopDelete,
     stopMove,
     expense,
     expenseUpdate,

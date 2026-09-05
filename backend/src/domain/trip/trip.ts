@@ -3,6 +3,8 @@ import { computeBudget } from "./settlement";
 import {
   AGENT_COMMENT_AUTHOR,
   type Budget,
+  type BudgetContributionSnapshot,
+  type BudgetItemSnapshot,
   type DaySnapshot,
   type ExpenseSnapshot,
   type MemberRole,
@@ -10,8 +12,17 @@ import {
   type StopCategory,
   type StopSnapshot,
   type TripIntake,
+  type TripStatus,
   type TripSnapshot,
 } from "./types";
+
+/** Child collections `save` rewrites independently. */
+export type TripSection =
+  | "status"
+  | "stops"
+  | "expenses"
+  | "budgetItems"
+  | "contributions";
 
 /** Effective permissions a user has against a trip. */
 export interface TripPermissions {
@@ -65,6 +76,18 @@ export interface UpdateStopDraft {
   costCurrency?: string;
   /** Free-form note (Markdown, may embed image URLs). Empty string clears it. */
   note?: string;
+}
+
+/** A planned cost that has no itinerary stop: flights, lodging, a rail pass. */
+export interface BudgetItemDraft {
+  label: string;
+  amount: number;
+  /** ISO currency code for the amount. Defaults to the trip currency. */
+  currency?: string;
+  /** Reuses the stop categories: `Stay` for hotels, `Transit` for flights. */
+  category?: StopCategory;
+  /** Trip member adding it. Optional so server-side seeding can omit it. */
+  createdBy?: string;
 }
 
 export interface AddExpenseDraft {
@@ -347,6 +370,8 @@ export class Trip {
       days,
       stops: [],
       expenses: [],
+      contributions: [],
+      budgetItems: [],
     };
     return new Trip(snapshot);
   }
@@ -450,6 +475,15 @@ export class Trip {
       days: source.days.map((d) => ({ ...d })),
       stops,
       expenses,
+      contributions: source.contributions.map((c) => ({
+        ...c,
+        memberId: remapMember(c.memberId),
+      })),
+      budgetItems: source.budgetItems.map((i) => ({
+        ...i,
+        id: `bi${nonce}-${i.id}`,
+        createdBy: i.createdBy ? remapMember(i.createdBy) : "",
+      })),
     });
   }
 
@@ -493,8 +527,25 @@ export class Trip {
 
   /** Keep the in-memory write echo aligned with the repository's atomic
    * `version = version + 1` update. */
-  private markChanged(): void {
+  /**
+   * Which child collections this mutation touched, so `save` can rewrite only
+   * those. Null means "unknown" and every collection is rewritten — the safe
+   * default, so a mutator that does not declare a section still persists.
+   */
+  private touched: Set<TripSection> | null = new Set();
+
+  private markChanged(section?: TripSection): void {
     this.snapshot.version += 1;
+    if (section == null) {
+      this.touched = null;
+      return;
+    }
+    this.touched?.add(section);
+  }
+
+  /** Sections to rewrite, or null to rewrite all of them. */
+  pendingSections(): ReadonlySet<TripSection> | null {
+    return this.touched;
   }
 
   /** Add the member to the stop's votes if absent, else remove. Idempotent. */
@@ -663,6 +714,19 @@ export class Trip {
     return stop;
   }
 
+  /** Remove a stop from the itinerary, closing the gap it leaves behind.
+   *
+   * Order is re-derived across the whole list rather than the affected day, so
+   * the aggregate keeps one contiguous sequence the way `moveStop` expects. */
+  removeStop(stopId: string): StopSnapshot {
+    const stop = this.requireStop(stopId);
+    const rest = this.snapshot.stops.filter((s) => s.id !== stop.id);
+    rest.forEach((s, i) => (s.order = i));
+    this.snapshot.stops = rest;
+    this.markChanged();
+    return stop;
+  }
+
   /** Move an existing stop to a position within any itinerary day. */
   moveStop(draft: MoveStopDraft): StopSnapshot {
     this.requireDay(draft.day);
@@ -692,6 +756,96 @@ export class Trip {
     return stop;
   }
 
+  /** Move the trip between planning, active and settled. Persisted on the base
+   * row, so it does not go through the section-scoped child rewrites. */
+  setStatus(status: TripStatus): void {
+    const allowed: TripStatus[] = ["planning", "active", "settled"];
+    if (!allowed.includes(status)) {
+      throw new DomainError("invalid_status", "Unknown trip status");
+    }
+    this.snapshot.status = status;
+    this.markChanged("status");
+  }
+
+  /** Add a planned cost with no stop behind it (flights, a hotel, a rail pass). */
+  addBudgetItem(draft: BudgetItemDraft): BudgetItemSnapshot {
+    const label = draft.label.trim();
+    if (!label) throw new DomainError("empty_label", "A label is required");
+    if (!(draft.amount > 0)) {
+      throw new DomainError("invalid_amount", "Amount must be positive");
+    }
+    if (draft.createdBy) this.requireMember(draft.createdBy);
+
+    const item: BudgetItemSnapshot = {
+      id: `bi${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      label,
+      category: draft.category ?? "Plan",
+      amount: Math.round(draft.amount),
+      currency: draft.currency?.trim() || this.snapshot.currency,
+      createdBy: draft.createdBy ?? "",
+      sortOrder: this.snapshot.budgetItems.length,
+    };
+    this.snapshot.budgetItems.push(item);
+    this.markChanged("budgetItems");
+    return item;
+  }
+
+  /** Replace an existing budget line, keeping its id and position. */
+  updateBudgetItem(itemId: string, draft: BudgetItemDraft): BudgetItemSnapshot {
+    const existing = this.snapshot.budgetItems.find((i) => i.id === itemId);
+    if (!existing) {
+      throw new DomainError("item_not_found", "Budget item not found");
+    }
+    const label = draft.label.trim();
+    if (!label) throw new DomainError("empty_label", "A label is required");
+    if (!(draft.amount > 0)) {
+      throw new DomainError("invalid_amount", "Amount must be positive");
+    }
+
+    existing.label = label;
+    existing.category = draft.category ?? existing.category;
+    existing.amount = Math.round(draft.amount);
+    existing.currency = draft.currency?.trim() || existing.currency;
+    this.markChanged("budgetItems");
+    return existing;
+  }
+
+  removeBudgetItem(itemId: string): void {
+    const next = this.snapshot.budgetItems.filter((i) => i.id !== itemId);
+    if (next.length === this.snapshot.budgetItems.length) {
+      throw new DomainError("item_not_found", "Budget item not found");
+    }
+    this.snapshot.budgetItems = next;
+    this.markChanged("budgetItems");
+  }
+
+  /** Set what one traveller puts into the shared budget pool, replacing any
+   * earlier figure. Zero clears their contribution rather than storing a row. */
+  setContribution(
+    memberId: string,
+    amount: number,
+    currency?: string,
+  ): BudgetContributionSnapshot {
+    this.requireMember(memberId);
+    if (!Number.isFinite(amount) || amount < 0) {
+      throw new DomainError("invalid_amount", "Amount cannot be negative");
+    }
+
+    const rounded = Math.round(amount);
+    const contribution: BudgetContributionSnapshot = {
+      memberId,
+      amount: rounded,
+      currency: currency?.trim() || this.snapshot.currency,
+    };
+
+    const rest = this.snapshot.contributions.filter(
+      (c) => c.memberId !== memberId,
+    );
+    this.snapshot.contributions = rounded > 0 ? [...rest, contribution] : rest;
+    this.markChanged("contributions");
+    return contribution;
+  }
+
   /** Add an equally-split expense. */
   addExpense(draft: AddExpenseDraft): ExpenseSnapshot {
     const description = draft.description.trim();
@@ -715,7 +869,7 @@ export class Trip {
       createdOrder: this.snapshot.expenses.length,
     };
     this.snapshot.expenses.push(expense);
-    this.markChanged();
+    this.markChanged("expenses");
     return expense;
   }
 
@@ -738,7 +892,7 @@ export class Trip {
     expense.currency = draft.currency?.trim() || this.snapshot.currency;
     expense.category = draft.category ?? "Plan";
     expense.participants = [...draft.participants];
-    this.markChanged();
+    this.markChanged("expenses");
     return expense;
   }
 

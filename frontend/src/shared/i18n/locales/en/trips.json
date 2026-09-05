@@ -8,7 +8,8 @@
       "label": "Home navigation",
       "today": "Today",
       "trips": "Trips",
-      "journal": "Travelogue"
+      "journal": "Travelogue",
+      "finance": "Finance"
     },
     "record": "Record now",
     "recentTrips": "Recent trips",
@@ -242,6 +243,55 @@
       "days_other": "{{count}} days",
       "people_one": "{{count}} person",
       "people_other": "{{count}} people"
+    }
+  },
+  "dashboard": {
+    "greeting": "Hello, {{name}}",
+    "subtitle_zero": "No trips yet. Pick a destination below to start your first one.",
+    "subtitle_one": "One trip in planning. Here is what is worth adding next.",
+    "subtitle_other": "{{count}} trips in planning. Here is what is worth adding next.",
+    "search": "Search destination",
+    "notifications": "Notifications",
+    "itineraries": {
+      "title": "Your itineraries",
+      "summary": "{{trips}} · {{stops}}",
+      "trips_one": "{{count}} trip",
+      "trips_other": "{{count}} trips",
+      "empty": "No trips in this filter yet.",
+      "new": "New itinerary"
+    },
+    "row": {
+      "untitled": "Untitled draft · name it to get started",
+      "noDates": "No dates set",
+      "planned": "{{amount}} planned",
+      "scheduled": "{{scheduled}} of {{total}} stops scheduled",
+      "openMap": "Open map",
+      "setDates": "Set dates",
+      "continue": "Continue planning"
+    },
+    "discover": {
+      "close": "Close destination details",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "plan": "Plan this trip",
+      "credit": "Photo: {{artist}} · {{license}}"
+    },
+    "rail": {
+      "organiser": "Trip organiser",
+      "seeAll": "See all {{count}}",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "more": "More destinations",
+      "seeMore": "See all {{count}}",
+      "seeLess": "See less"
+    },
+    "ai": {
+      "title": "Plan with AI",
+      "body": "Let the co-planner sequence your stops and flag gaps in the day."
+    },
+    "popular": {
+      "title": "Popular destinations",
+      "subtitle": "Templates you can turn into a trip in one step."
     }
   }
 }

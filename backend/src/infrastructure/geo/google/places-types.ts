@@ -22,6 +22,7 @@ export interface GooglePlace {
   nationalPhoneNumber?: string;
   internationalPhoneNumber?: string;
   websiteUri?: string;
+  editorialSummary?: { text?: string };
   regularOpeningHours?: {
     weekdayDescriptions?: string[];
   };

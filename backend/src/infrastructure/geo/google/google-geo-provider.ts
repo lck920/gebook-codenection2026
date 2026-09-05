@@ -66,6 +66,7 @@ const DETAIL_FIELD_MASK = [
   "internationalPhoneNumber",
   "websiteUri",
   "regularOpeningHours",
+  "editorialSummary",
   "reviews",
 ].join(",");
 

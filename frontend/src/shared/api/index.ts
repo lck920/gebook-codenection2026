@@ -17,10 +17,16 @@ export {
   reorderTripDays,
   insertStop,
   updateStop,
+  deleteStop,
   moveStop,
   toggleVote,
   addComment,
   addExpense,
+  setBudgetContribution,
+  setTripStatus,
+  addBudgetItem,
+  updateBudgetItem,
+  removeBudgetItem,
   updateExpense,
   createTripInvite,
   regenerateTripInvite,
@@ -67,6 +73,16 @@ export {
   type AgentHistory,
   type AgentEvents,
 } from "./agent";
+export {
+  fetchPlaceDetails,
+  searchPlaceDetails,
+  type PlaceDetails,
+} from "./place-details";
+export {
+  fetchPlaceInsight,
+  type PlaceInsight,
+  type PlacePhoto,
+} from "./place-insight";
 export { fetchWeather, type WeatherData } from "./weather";
 export { fetchFxRates, type FxRatesData } from "./fx";
 export { uploadTripMedia, TRIP_MEDIA_ACCEPT } from "./media";

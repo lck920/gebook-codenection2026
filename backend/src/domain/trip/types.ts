@@ -117,6 +117,36 @@ export interface TripSnapshot {
   days: DaySnapshot[];
   stops: StopSnapshot[];
   expenses: ExpenseSnapshot[];
+  /** What each traveller has put into the shared budget pool during planning.
+   * Members with no row have not contributed yet. */
+  contributions: BudgetContributionSnapshot[];
+  /** Planned costs that are not tied to an itinerary stop. */
+  budgetItems: BudgetItemSnapshot[];
+}
+
+/** A planned cost with no itinerary stop behind it — flights, a hotel booking,
+ * a rail pass. Stop costs live on `StopSnapshot.cost`; planned spend is both. */
+export interface BudgetItemSnapshot {
+  id: string;
+  label: string;
+  /** Reuses the shared stop categories so budget and itinerary agree. */
+  category: StopCategory;
+  amount: number;
+  /** ISO currency code. Empty string means "use the trip currency". */
+  currency: string;
+  /** Trip member who added it, for the "added by" line. */
+  createdBy: string;
+  /** Persistence-only insertion order. */
+  sortOrder: number;
+}
+
+/** One traveller's commitment to the shared budget pool. Planning-phase money,
+ * distinct from `ExpenseSnapshot`, which is money already spent. */
+export interface BudgetContributionSnapshot {
+  memberId: string;
+  amount: number;
+  /** ISO currency code. Empty string means "use the trip currency". */
+  currency: string;
 }
 
 /** Optional create-wizard answers persisted on the trip. Omitted fields mean TBD. */

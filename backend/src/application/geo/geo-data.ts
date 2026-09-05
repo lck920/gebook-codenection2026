@@ -36,6 +36,7 @@ export interface GeoPlaceDto {
   phone?: string;
   website?: string;
   openingHours?: string[];
+  summary?: string;
   extras?: Record<string, string>;
 }
 
@@ -94,6 +95,7 @@ export function toPlaceDto(place: GeoPlace): GeoPlaceDto {
     phone: place.phone,
     website: place.website,
     openingHours: place.openingHours ? [...place.openingHours] : undefined,
+    summary: place.summary,
     extras: place.extras ? { ...place.extras } : undefined,
   };
 }

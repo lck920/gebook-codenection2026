@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -64,6 +65,16 @@ export function AgentComposer({
     inputRef: textareaRef,
     listId: "agent-mention-list",
   });
+
+  // `rows={1}` keeps the resting height to one line, so without this the box
+  // never grows and long drafts scroll out of sight. Height is re-measured from
+  // scrollHeight on every change; `max-h-28` caps it and scrolls beyond that.
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [draft]);
 
   useEffect(() => {
     attachmentsRef.current = attachments;

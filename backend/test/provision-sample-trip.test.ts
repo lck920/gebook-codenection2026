@@ -25,6 +25,7 @@ function memoryRepo(): TripRepository & {
       created.push(trip);
     },
     addMember: async () => {},
+    setStatus: async () => {},
     rename: async () => {},
     clearAgentSeedPending: async () => {},
     updateIntake: async () => {},

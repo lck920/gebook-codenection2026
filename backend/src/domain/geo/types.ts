@@ -45,6 +45,8 @@ export interface GeoPlace {
   phone?: string;
   website?: string;
   openingHours?: string[];
+  /** One-line editorial description, when the provider writes them. */
+  summary?: string;
   /** Extra provider tags kept for agent context (OSM extratags, etc.). */
   extras?: Record<string, string>;
 }
