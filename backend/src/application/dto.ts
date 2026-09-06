@@ -48,6 +48,21 @@ export interface TripDto {
     participants: string[];
     whenLabel: string;
   }>;
+  /** Planned costs with no itinerary stop behind them. */
+  budgetItems: Array<{
+    id: string;
+    label: string;
+    category: string;
+    amount: number;
+    currency: string;
+    createdBy: string;
+  }>;
+  /** Per-traveller commitments to the shared budget pool (planning phase). */
+  contributions: Array<{
+    memberId: string;
+    amount: number;
+    currency: string;
+  }>;
   budget: ReturnType<Trip["budget"]>;
 }
 
@@ -100,6 +115,19 @@ export function toTripDto(trip: Trip, currentUserId: string): TripDto {
       category: e.category,
       participants: e.participants,
       whenLabel: e.whenLabel,
+    })),
+    budgetItems: s.budgetItems.map((i) => ({
+      id: i.id,
+      label: i.label,
+      category: i.category,
+      amount: i.amount,
+      currency: i.currency,
+      createdBy: i.createdBy,
+    })),
+    contributions: s.contributions.map((c) => ({
+      memberId: c.memberId,
+      amount: c.amount,
+      currency: c.currency,
     })),
     budget: trip.budget(),
   };

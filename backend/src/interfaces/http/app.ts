@@ -53,6 +53,26 @@ const dayNumberSchema = dayNumberParamSchema;
 
 const commentSchema = z.object({ text: z.string().min(1) });
 
+/** Trip lifecycle: planning while drafting, active once locked, settled after. */
+const tripStatusSchema = z.object({
+  status: z.enum(["planning", "active", "settled"]),
+});
+
+/** A planned cost with no itinerary stop: flights, a hotel, a rail pass. */
+const budgetItemSchema = z.object({
+  label: z.string().min(1),
+  amount: z.number().positive(),
+  currency: z.string().optional(),
+  category: z.string().optional(),
+});
+
+/** Budget-pool contribution. Zero is valid: it clears the member's stake. */
+const contributionSchema = z.object({
+  memberId: z.string().min(1),
+  amount: z.number().nonnegative(),
+  currency: z.string().optional(),
+});
+
 const reservationTypeSchema = z.enum([
   "flight",
   "accommodation",
@@ -224,6 +244,7 @@ export function createApp(
     fileStorage,
     config,
     weatherService,
+    geoService,
     fxService,
     agentService,
     reservationService,
@@ -482,6 +503,61 @@ export function createApp(
     return ok(c, await weatherService.getWeather(lat, lon, date, time, lang));
   });
 
+  /** Place autocomplete for the stop composer, biased to where the trip is.
+   *
+   * Free-text stop names were being geocoded after the fact, which is how a
+   * "JiuFen" ends up as a namesake street on another continent. Searching up
+   * front lets the member pick the real place, coordinates included. */
+  guard.get("/places/search", async (c) => {
+    const query = c.req.query("q")?.trim() ?? "";
+    const lat = Number(c.req.query("lat"));
+    const lng = Number(c.req.query("lng"));
+    const lang = c.req.query("lang")?.trim() || "en";
+    const limit = Number(c.req.query("limit"));
+    if (query.length < 2) return ok(c, []);
+    const near =
+      Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : undefined;
+    return ok(
+      c,
+      await geoService.placeSearch({
+        query,
+        limit: Number.isFinite(limit) ? limit : 6,
+        lang,
+        near,
+      }),
+    );
+  });
+
+  /** Place background for a stop: what it is, how it rates, when it opens.
+   *
+   * Proxied rather than called from the browser because the provider key is a
+   * server secret. Resolves by name biased to the stop's coordinates, then
+   * fetches the detail record for the best hit. Returns `null` (not an error)
+   * when nothing matches — an unnamed "Lunch" stop simply has no listing. */
+  guard.get("/places/detail", async (c) => {
+    const name = c.req.query("name")?.trim() ?? "";
+    const lat = Number(c.req.query("lat"));
+    const lng = Number(c.req.query("lng"));
+    const lang = c.req.query("lang")?.trim() || "en";
+    if (name.length < 2) {
+      return fail(c, "invalid_geo_query", "name is required", 400);
+    }
+    const near =
+      Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : undefined;
+    const matches = await geoService.placeSearch({
+      query: name,
+      limit: 1,
+      lang,
+      near,
+    });
+    const match = matches[0];
+    if (!match) return ok(c, null);
+    // The search mask is deliberately narrow; hours, phone and the editorial
+    // blurb only come back from the detail call.
+    const detail = await geoService.placeDetail({ placeId: match.id, lang });
+    return ok(c, detail ?? match);
+  });
+
   // FX proxy: budget settle-up uses FxService (never a vendor client).
   guard.get("/fx/rates", async (c) => {
     const base = c.req.query("base")?.trim() ?? "";
@@ -696,6 +772,22 @@ export function createApp(
     return ok(c, dto);
   });
 
+  guard.delete("/trips/:id/stops/:stopId", async (c) => {
+    const tripId = c.req.param("id");
+    const stopId = c.req.param("stopId");
+    // Read the name before the delete: afterwards there is nothing to name.
+    const before = await tripService.getTrip(tripId, c.get("user")!.id);
+    const stopName = before.stops.find((s) => s.id === stopId)?.name ?? stopId;
+    const dto = await tripService.removeStop(tripId, stopId, c.get("user")!.id);
+    notifyAgent(c, {
+      tripId: dto.id,
+      operation: "remove_stop",
+      summary: `removed stop "${stopName}"`,
+      details: { stopId },
+    });
+    return ok(c, dto);
+  });
+
   guard.put("/trips/:id/stops/:stopId/position", async (c) => {
     const input = moveStopSchema.parse(await c.req.json());
     const stopId = c.req.param("stopId");
@@ -765,6 +857,90 @@ export function createApp(
       tripId: dto.id,
       operation: "add_expense",
       summary: `added expense "${input.description}" (${input.amount})`,
+      details: { input },
+    });
+    return ok(c, dto);
+  });
+
+  guard.patch("/trips/:id/status", async (c) => {
+    const input = tripStatusSchema.parse(await c.req.json());
+    const dto = await tripService.setTripStatus(
+      c.req.param("id"),
+      input.status,
+      c.get("user")!.id,
+    );
+    notifyAgent(c, {
+      tripId: dto.id,
+      operation: "set_trip_status",
+      summary: `set trip status to ${input.status}`,
+      details: { input },
+    });
+    return ok(c, dto);
+  });
+
+  guard.post("/trips/:id/budget-items", async (c) => {
+    const input = budgetItemSchema.parse(await c.req.json());
+    const dto = await tripService.addBudgetItem(
+      c.req.param("id"),
+      input as Parameters<typeof tripService.addBudgetItem>[1],
+      c.get("user")!.id,
+    );
+    notifyAgent(c, {
+      tripId: dto.id,
+      operation: "add_budget_item",
+      summary: `added planned cost "${input.label}" (${input.amount})`,
+      details: { input },
+    });
+    return ok(c, dto);
+  });
+
+  guard.patch("/trips/:id/budget-items/:itemId", async (c) => {
+    const input = budgetItemSchema.parse(await c.req.json());
+    const itemId = c.req.param("itemId");
+    const dto = await tripService.updateBudgetItem(
+      c.req.param("id"),
+      itemId,
+      input as Parameters<typeof tripService.updateBudgetItem>[2],
+      c.get("user")!.id,
+    );
+    notifyAgent(c, {
+      tripId: dto.id,
+      operation: "update_budget_item",
+      summary: `updated planned cost "${input.label}"`,
+      details: { itemId, changes: input },
+    });
+    return ok(c, dto);
+  });
+
+  guard.delete("/trips/:id/budget-items/:itemId", async (c) => {
+    const itemId = c.req.param("itemId");
+    const dto = await tripService.removeBudgetItem(
+      c.req.param("id"),
+      itemId,
+      c.get("user")!.id,
+    );
+    notifyAgent(c, {
+      tripId: dto.id,
+      operation: "remove_budget_item",
+      summary: "removed a planned cost",
+      details: { itemId },
+    });
+    return ok(c, dto);
+  });
+
+  guard.put("/trips/:id/budget-contributions", async (c) => {
+    const input = contributionSchema.parse(await c.req.json());
+    const dto = await tripService.setBudgetContribution(
+      c.req.param("id"),
+      input.memberId,
+      input.amount,
+      input.currency,
+      c.get("user")!.id,
+    );
+    notifyAgent(c, {
+      tripId: dto.id,
+      operation: "set_budget_contribution",
+      summary: `set budget pool contribution to ${input.amount}`,
       details: { input },
     });
     return ok(c, dto);

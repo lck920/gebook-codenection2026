@@ -14,13 +14,12 @@ import {
   renameTrip,
   reversePlace,
   fetchPreferences,
-  updatePreferences,
   updateAgentPanelPreference,
   fetchAgentStatus,
   approveAgentSuggestion,
   ApiError,
   type AgentSuggestion,
-  type UpdateStopInput,
+  type UpdateStopInput,  setTripStatus,
 } from "@/shared/api";
 import { queryKeys } from "@/shared/config";
 import { stopNumbers, upsertTripSummary, type Trip, type TripSummary } from "@/entities/trip";
@@ -31,21 +30,25 @@ import { useSession } from "@/shared/auth";
 import { cn, useDocumentTitle, useIsMobile } from "@/shared/lib";
 import { AppSidebar } from "@/widgets/app-sidebar";
 import { Spinner } from "@/shared/ui/spinner";
-import { Tabs } from "@/shared/ui/tabs";
-import { Splitter, clamp } from "@/shared/ui/splitter";
+import { clamp } from "@/shared/ui/splitter";
 import { toastManager } from "@/shared/ui/toast";
 import { useTripActions } from "./model/useTripActions";
 import { useTripRealtime } from "./model/useTripRealtime";
 import { useAgentEvents } from "./model/useAgentEvents";
 import { BackButton } from "./ui/BackButton";
-import { Sidebar, type SidebarProps } from "./ui/Sidebar";
+import { InviteDialog } from "./ui/InviteDialog";
+import { ItineraryColumn } from "./ui/ItineraryColumn";
+import { PlannerColumns } from "./ui/PlannerColumns";
+import { PlannerHeader } from "./ui/PlannerHeader";
+import type { SidebarProps } from "./ui/Sidebar";
 import { MobileAgentSheet } from "./ui/mobile/MobileAgentSheet";
 import { MobileItinerarySheet } from "./ui/mobile/MobileItinerarySheet";
 import { MobilePlannerHeader } from "./ui/mobile/MobilePlannerHeader";
 import { MobileStopDetailSheet } from "./ui/mobile/MobileStopDetailSheet";
+import { StopInspector } from "./ui/StopInspector";
+import { buildPlanTripMessage } from "./lib/buildAgentSeedMessage";
 import { MobileTabBar } from "./ui/mobile/MobileTabBar";
-import { AgentToggle } from "./ui/agent/AgentToggle";
-import { AgentDrawer } from "./ui/agent/AgentDrawer";
+import { AgentChat } from "./ui/agent/AgentChat";
 import { AgentInterventionToasts } from "./ui/agent/AgentInterventionToast";
 import { NoteEditorPane } from "./ui/NoteEditorPane";
 import { TripMapView } from "./ui/TripMapView";
@@ -59,10 +62,12 @@ import { GroupPreferencesModal } from "./ui/GroupPreferencesModal";
 
 type Tab = "map" | "schedule" | "reservations" | "budget";
 
+/** Which surface a stop was picked on, so its panel opens there. */
+type StopSelectionSource = "itinerary" | "map";
+
 const MIN_SIDEBAR_WIDTH = 0;
 const MAX_SIDEBAR_WIDTH = 55;
 const DEFAULT_SIDEBAR_WIDTH = 30;
-const SIDEBAR_STEP = 1;
 
 export function TravelPlannerPage({ tripId }: { tripId: string }) {
   const { t } = useTranslation("planner");
@@ -78,6 +83,18 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
   const [tab, setTab] = useState<Tab>("map");
   const [day, setDay] = useState(0);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
+  // Where the stop was clicked decides where its panel opens: picking a stop in
+  // the itinerary should not send the reader's eye across to the map column,
+  // and picking a pin on the map should not cover the list they were reading.
+  const [selectionSource, setSelectionSource] =
+    useState<StopSelectionSource>("map");
+  // "Plan with AI" fills the composer rather than sending: the member gets to
+  // edit the ask before the agent starts drafting days. The counter re-offers
+  // the same text after they clear it.
+  const [agentDraft, setAgentDraft] = useState<{
+    text: string;
+    key: string;
+  } | null>(null);
   const [noteEditingStopId, setNoteEditingStopId] = useState<string | null>(
     null,
   );
@@ -99,7 +116,6 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
 
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const previousSidebarWidthRef = useRef(DEFAULT_SIDEBAR_WIDTH);
-  const sidebarCollapsed = sidebarWidth <= MIN_SIDEBAR_WIDTH;
 
   const { data: preferences } = useQuery({
     queryKey: queryKeys.preferences,
@@ -107,12 +123,6 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  const updatePreferencesMutation = useMutation({
-    mutationFn: updatePreferences,
-    onSuccess: async (data) => {
-      queryClient.setQueryData(queryKeys.preferences, data);
-    },
-  });
 
   useEffect(() => {
     if (!preferences) return;
@@ -133,37 +143,6 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
     }
   }, [sidebarWidth]);
 
-  const handleSidebarChange = useCallback((value: number) => {
-    setSidebarWidth(value);
-  }, []);
-
-  const persistSidebar = useCallback(
-    (value: number) => {
-      updatePreferencesMutation.mutate({
-        plannerSidebarWidth: value,
-        plannerSidebarCollapsed: value <= MIN_SIDEBAR_WIDTH,
-      });
-    },
-    [updatePreferencesMutation],
-  );
-
-  const toggleSidebarCollapsed = useCallback(() => {
-    setSidebarWidth((current) => {
-      let next: number;
-      if (current <= MIN_SIDEBAR_WIDTH) {
-        next = Math.min(
-          Math.max(previousSidebarWidthRef.current, MIN_SIDEBAR_WIDTH + SIDEBAR_STEP),
-          MAX_SIDEBAR_WIDTH,
-        );
-      } else {
-        previousSidebarWidthRef.current = current;
-        next = MIN_SIDEBAR_WIDTH;
-      }
-      persistSidebar(next);
-      return next;
-    });
-  }, [persistSidebar]);
-
   // ----- Trip agent (only active when the deployment has AI configured) -----
   const { data: agentStatus } = useQuery({
     queryKey: queryKeys.agentStatus,
@@ -176,6 +155,16 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
   // useState + useEffect(preferences) race: open → optimistic false → late
   // GET /preferences with stale true re-collapses the panel immediately.
   const agentCollapsed = preferences?.agentPanelCollapsed ?? true;
+  const status = useMutation({
+    mutationFn: (next: Trip["status"]) => setTripStatus(tripId, next),
+    onSuccess: (updated: Trip) => {
+      queryClient.setQueryData(queryKeys.trip(updated.id), updated);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.trips });
+    },
+    onError: () =>
+      toastManager.add({ title: "Could not change the status", type: "error" }),
+  });
+
   const agentPanelMutation = useMutation({
     mutationFn: updateAgentPanelPreference,
     onMutate: async (collapsed) => {
@@ -501,8 +490,9 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
     { value: "budget", label: t("tabs.budget"), icon: Wallet },
   ];
 
-  const selectStop = (id: string) => {
+  const selectStop = (id: string, from: StopSelectionSource = "map") => {
     setSelectedStopId(id);
+    setSelectionSource(from);
     setNoteEditingStopId((current) => (current && current !== id ? null : current));
   };
 
@@ -516,6 +506,21 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
     setNoteEditingStopId(null);
     setTab("schedule");
     setAgentPanel(true);
+  };
+
+  const removeStop = (stopId: string) => {
+    // Clear the selection first: the panel would otherwise linger on a stop
+    // that no longer exists while the mutation settles.
+    setSelectedStopId(null);
+    actions.stopDelete.mutate(stopId);
+  };
+
+  const planWithAgent = () => {
+    setAgentPanel(false);
+    setAgentDraft((current) => ({
+      text: buildPlanTripMessage(ta, trip),
+      key: `plan-${(current ? Number(current.key.split("-")[1]) : 0) + 1}`,
+    }));
   };
 
   const focusGeneratedStop = (stopId: string) => {
@@ -554,7 +559,6 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
   };
 
   const headerSubtitle = formatTripSubtitle(trip, i18n.language, t);
-  const agentPanelOpen = agentEnabled && !agentCollapsed;
 
   const sidebarProps: SidebarProps = {
     trip,
@@ -592,9 +596,9 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
   // All four mode panes stay mounted so switching modes preserves each pane's
   // scroll position and keeps the MapLibre canvas alive; only the active pane
   // is visible. The note editor overlays them all while open.
-  const panes = (
+  const renderPanes = (activeTab: Tab, withMap: boolean) => (
     <div className="relative min-h-0 flex-1 overflow-hidden">
-      <PlannerPane active={!noteEditingStop && tab === "map"}>
+      <PlannerPane active={withMap && !noteEditingStop && activeTab === "map"}>
         <TripMapView
           trip={trip}
           numbers={numbers}
@@ -611,7 +615,7 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
           }}
         />
       </PlannerPane>
-      <PlannerPane active={!noteEditingStop && tab === "schedule"}>
+      <PlannerPane active={!noteEditingStop && activeTab === "schedule"}>
         <ScheduleBoard
           trip={trip}
           compose={compose}
@@ -648,10 +652,10 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
           }
         />
       </PlannerPane>
-      <PlannerPane active={!noteEditingStop && tab === "reservations"} scroll>
+      <PlannerPane active={!noteEditingStop && activeTab === "reservations"} scroll>
         <ReservationsBoard trip={trip} canEdit={trip.permissions.canEdit} />
       </PlannerPane>
-      <PlannerPane active={!noteEditingStop && tab === "budget"} scroll>
+      <PlannerPane active={!noteEditingStop && activeTab === "budget"} scroll>
         <BudgetBoard
           trip={trip}
           currentUserId={currentUserId}
@@ -708,7 +712,7 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
           onOpenAgent={agentEnabled ? () => setAgentPanel(false) : undefined}
         />
         <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-          {panes}
+          {renderPanes(tab, true)}
           {!noteEditingStop && tab === "map" ? (
             <MobileItinerarySheet {...sidebarProps} />
           ) : null}
@@ -768,105 +772,174 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
     );
   }
 
+  // Desktop planner: chat, itinerary and map side by side, so a change made in
+  // one is visible in the others without switching views.
+  const middleTab: Tab = tab === "map" ? "schedule" : tab;
+  const boardTabs: { value: Tab; label: string }[] = [
+    { value: "schedule", label: t("tabs.schedule") },
+    { value: "budget", label: t("tabs.budget") },
+    { value: "reservations", label: t("tabs.reservations") },
+  ];
+
   return (
     <StreetViewViewerProvider tripId={trip.id}>
-      <div className="flex h-dvh bg-sidebar">
-      <Splitter
-        orientation="horizontal"
-        value={sidebarWidth}
-        min={MIN_SIDEBAR_WIDTH}
-        max={MAX_SIDEBAR_WIDTH}
-        step={SIDEBAR_STEP}
-        primaryPaneId="planner-sidebar"
-        aria-label={t("splitter.sidebarLabel")}
-        onChange={handleSidebarChange}
-        onChangeEnd={persistSidebar}
-      >
-        <AppSidebar
-          collapsed={sidebarCollapsed}
-          onCollapsedChange={toggleSidebarCollapsed}
-          top={
-            <div className="flex flex-col gap-2">
-              <div className="flex min-w-0 items-start gap-2">
-                <div className="min-w-0 flex-1">
-                  <BackButton
-                    onBack={() => navigate("/")}
-                    title={trip.title}
-                    subtitle={headerSubtitle}
-                    onRename={(title) => rename.mutate(title)}
-                  />
-                </div>
-                <Tabs
-                  items={tabItems}
-                  value={tab}
-                  onValueChange={(v) => {
-                    setNoteEditingStopId(null);
-                    setTab(v as Tab);
-                  }}
-                  aria-label={t("tabs.map")}
-                  className="mt-0.5 shrink-0"
+      <div className="gb-dashboard h-dvh bg-[var(--dashboard-ground)] p-4">
+        <div className="flex h-full flex-col overflow-hidden rounded-3xl bg-background shadow-[0_8px_32px_-16px_rgba(2,13,51,0.14)]">
+          <PlannerHeader
+            trip={trip}
+            subtitle={headerSubtitle}
+            onBack={() => navigate("/")}
+            inviteSlot={<InviteDialog tripId={trip.id} />}
+            onToggleStatus={() =>
+              status.mutate(trip.status === "planning" ? "active" : "planning")
+            }
+            statusPending={status.isPending}
+          />
+
+          <PlannerColumns
+            minChat={390}
+            minItinerary={360}
+            minMap={420}
+            chat={
+              <div className="flex min-h-0 flex-1 flex-col border-r border-border">
+                {agentEnabled ? (
+                <AgentChat
+                  tripId={trip.id}
+                  trip={trip}
+                  canEdit={trip.permissions.canEdit}
+                  applyingId={applyingSuggestionId}
+                  onApproveSuggestion={handleApproveSuggestion}
+                  onDenySuggestion={handleDenySuggestion}
+                  onFocusDay={focusGeneratedDay}
+                  onFocusStop={focusGeneratedStop}
+                  draftSuggestion={agentDraft?.text ?? null}
+                  draftSuggestionKey={agentDraft?.key}
                 />
+              ) : (
+                <div className="m-auto max-w-60 px-6 text-center">
+                  <p className="text-[13px] font-semibold">
+                    {t("agentOff.title")}
+                  </p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                    {t("agentOff.body")}
+                  </p>
+                </div>
+              )}
               </div>
-              <div className="flex items-center gap-2 px-1">
-                <button
-                  type="button"
-                  onClick={() => setRePlanOpen(true)}
-                  className="wf-tactile-btn flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:from-amber-600 hover:to-amber-700"
-                  title="Emergency Re-Plan on the Fly"
-                >
-                  <span>⚡ Re-Plan on Fly</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGroupPrefsOpen(true)}
-                  className="wf-tactile-btn-white flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground shadow-sm hover:bg-secondary"
-                  title="Group Preferences & Consensus"
-                >
-                  <span>👥 Preferences</span>
-                </button>
+            }
+            itinerary={
+              <div className="relative flex min-h-0 flex-1 flex-col border-r border-border">
+                <div className="flex h-12 flex-none items-center gap-2 border-b border-border px-4.5">
+                <span className="text-[13px] font-bold tracking-tight">
+                  {t("tabs.schedule")}
+                </span>
+                <div className="ml-auto inline-flex h-7.5 items-center gap-0.5 rounded-[10px] bg-muted p-0.5">
+                  {boardTabs.map((item) => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => {
+                        setNoteEditingStopId(null);
+                        setTab(item.value);
+                      }}
+                      aria-pressed={middleTab === item.value}
+                      className={cn(
+                        "wf-interactive inline-flex h-6 items-center rounded-[7px] px-2.5 text-[11.5px] font-semibold",
+                        middleTab === item.value
+                          ? "bg-card text-foreground"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          }
-        >
-          <Sidebar {...sidebarProps} />
-        </AppSidebar>
-
-        <div className="flex min-h-0 min-w-0 flex-1">
-        <div
-          className={cn(
-            "relative z-[5] flex min-w-0 flex-1 overflow-hidden border border-border bg-background transition-[border-radius,box-shadow] duration-[var(--dur-slow)] ease-[var(--ease-out)]",
-            agentPanelOpen
-              ? "rounded-2xl shadow-[-8px_0_24px_-16px_rgba(15,23,42,0.25),8px_0_24px_-16px_rgba(15,23,42,0.25)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.025)]"
-              : "rounded-l-2xl border-r-0 shadow-[-8px_0_24px_-16px_rgba(15,23,42,0.25)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.025)]",
-          )}
-        >
-          <main className="relative flex min-w-0 flex-1 flex-col">
-            {panes}
-            {floatingMembers}
-          </main>
-      </div>
-
-          {agentEnabled ? (
-            <AgentDrawer
-              open={!agentCollapsed}
-              tripId={trip.id}
-              trip={trip}
-              canEdit={trip.permissions.canEdit}
-              applyingId={applyingSuggestionId}
-              onApproveSuggestion={handleApproveSuggestion}
-              onDenySuggestion={handleDenySuggestion}
-              onFocusDay={focusGeneratedDay}
-              onFocusStop={focusGeneratedStop}
-              onClose={() => setAgentPanel(true)}
-            />
-          ) : null}
+              {middleTab === "schedule" ? (
+                <ItineraryColumn
+                  trip={trip}
+                  day={day}
+                  onDayChange={(d) => {
+                    setDay(d);
+                    setSelectedStopId(null);
+                    setNoteEditingStopId(null);
+                  }}
+                  selectedStopId={selectedStopId}
+                  onSelectStop={(id) => selectStop(id, "itinerary")}
+                  compose={compose}
+                  onOpenCompose={openCompose}
+                  onChangeCompose={patchCompose}
+                  onConfirmCompose={confirmCompose}
+                  onCancelCompose={cancelCompose}
+                  canEdit={trip.permissions.canEdit}
+                  onPlanWithAI={agentEnabled ? planWithAgent : undefined}
+                  onPickOnMap={startPickOnMap}
+                  biasLat={bias?.lat}
+                  biasLng={bias?.lng}
+                />
+              ) : (
+                <div className="relative min-h-0 flex-1">
+                  {renderPanes(middleTab, false)}
+                </div>
+              )}
+              {selectedStop &&
+              !noteEditingStop &&
+              selectionSource === "itinerary" ? (
+                <StopInspector
+                  trip={trip}
+                  stop={selectedStop}
+                  currentUserId={currentUserId}
+                  canEdit={trip.permissions.canEdit}
+                  onClose={() => setSelectedStopId(null)}
+                  onToggleVote={sidebarProps.onToggleVote}
+                  onComment={sidebarProps.onComment}
+                  commentPending={actions.comment.isPending}
+                  onUpdateStop={sidebarProps.onUpdateStop}
+                  onChangeStopDay={sidebarProps.onChangeStopDay}
+                  onExpandNote={openNoteEditor}
+                  onWriteTravelogue={sidebarProps.onWriteTravelogue}
+                  onDeleteStop={removeStop}
+                />
+              ) : null}
+              </div>
+            }
+            map={
+              <>
+                <TripMapView
+                trip={trip}
+                numbers={numbers}
+                day={day}
+                activeStopId={selectedStopId}
+                onSelectStop={selectStop}
+                picking={picking}
+                onPick={handleMapPick}
+                onAddStopHere={addStopAt}
+                locateSignal={locateSignal}
+                onCancelPick={() => setPicking(false)}
+              />
+                {selectedStop && !noteEditingStop && selectionSource === "map" ? (
+                  <StopInspector
+                    trip={trip}
+                    stop={selectedStop}
+                    currentUserId={currentUserId}
+                    canEdit={trip.permissions.canEdit}
+                    onClose={() => setSelectedStopId(null)}
+                    onToggleVote={sidebarProps.onToggleVote}
+                    onComment={sidebarProps.onComment}
+                    commentPending={actions.comment.isPending}
+                    onUpdateStop={sidebarProps.onUpdateStop}
+                    onChangeStopDay={sidebarProps.onChangeStopDay}
+                    onExpandNote={openNoteEditor}
+                    onWriteTravelogue={sidebarProps.onWriteTravelogue}
+                    onDeleteStop={removeStop}
+                  />
+                ) : null}
+                {floatingMembers}
+              </>
+            }
+          />
         </div>
-      </Splitter>
-
-      {agentEnabled && agentCollapsed ? (
-        <AgentToggle onOpen={() => setAgentPanel(false)} />
-      ) : null}
-
+      </div>
       {agentEnabled ? (
         <AgentInterventionToasts
           suggestions={pendingSuggestions}
@@ -877,7 +950,6 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
           onDeny={handleDenySuggestion}
         />
       ) : null}
-
       <RePlanOnFlyDialog
         open={rePlanOpen}
         onOpenChange={setRePlanOpen}
@@ -892,7 +964,6 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
         tripTitle={trip.title}
         memberCount={trip.members.length}
       />
-      </div>
     </StreetViewViewerProvider>
   );
 }

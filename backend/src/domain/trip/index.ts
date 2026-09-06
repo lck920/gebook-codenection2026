@@ -4,6 +4,8 @@ export type {
   MoveStopDraft,
   UpdateStopDraft,
   AddExpenseDraft,
+  BudgetItemDraft,
+  TripSection,
   UpdateDayDraft,
   CreateTripDraft,
   TripOwner,

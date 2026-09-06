@@ -20,6 +20,7 @@ function fixture(role: "owner" | "viewer" = "owner") {
     findById: vi.fn(async () => trip),
     create: vi.fn(async () => {}),
     addMember: vi.fn(async () => {}),
+    setStatus: async () => {},
     rename: vi.fn(async () => {}),
     clearAgentSeedPending: vi.fn(async () => {}),
     updateIntake: vi.fn(async () => {}),

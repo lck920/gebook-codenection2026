@@ -44,6 +44,8 @@ function trip(partial: Partial<Trip> & Pick<Trip, "days" | "stops">): Trip {
     members: [],
     permissions: { isMember: true, canEdit: true, canInvite: true },
     expenses: [],
+    contributions: [],
+    budgetItems: [],
     budget: { total: 0, perPerson: 0, balances: [], settlements: [] },
     ...partial,
   };

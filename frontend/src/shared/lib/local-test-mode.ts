@@ -239,6 +239,15 @@ const SAMPLE_TRIP: Trip = {
       comments: [],
     },
   ],
+  contributions: [
+    { memberId: "m-1", amount: 100000, currency: "JPY" },
+    { memberId: "m-2", amount: 100000, currency: "JPY" },
+    { memberId: "m-3", amount: 100000, currency: "JPY" },
+  ],
+  budgetItems: [
+    { id: "bi-1", label: "Flights KUL → HND", category: "Transit", amount: 1800, currency: "MYR", createdBy: "m-1" },
+    { id: "bi-2", label: "Hotel in Asakusa · 4 nights", category: "Stay", amount: 1200, currency: "MYR", createdBy: "m-1" },
+  ],
   expenses: [
     {
       id: "e-1",
@@ -341,6 +350,9 @@ export function getLocalTripSummaries(): TripSummary[] {
     coverUrl: t.coverUrl,
     memberCount: t.members.length,
     stopCount: t.stops.length,
+    scheduledStopCount: t.stops.filter((stop) => stop.time !== "").length,
+    plannedBudget: t.intake?.budgetAmount ?? null,
+    plannedBudgetCurrency: t.intake?.budgetCurrency ?? t.currency,
     createdAt: new Date().toISOString(),
     creatorName: t.members[0]?.name ?? "You",
     members: t.members.map((m) => ({

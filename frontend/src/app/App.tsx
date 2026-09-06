@@ -9,6 +9,7 @@ import { AuthPage } from "@/pages/auth";
 import { LandingPage } from "@/pages/landing";
 import { InvitePage } from "@/pages/invite";
 import { TripsPage } from "@/pages/trips";
+import { DashboardPage } from "@/pages/dashboard";
 import { TravelPlannerPage } from "@/pages/travel-planner";
 import { FinancePage } from "@/pages/finance";
 import { ErrorPage } from "@/pages/error";
@@ -19,6 +20,10 @@ function Routes() {
   const tripId = matchTripId(path);
   if (tripId) return <TravelPlannerPage tripId={tripId} />;
   if (path === "/finance") return <FinancePage />;
+  // The personalized dashboard is the signed-in home; /today and /journal keep
+  // the trips-hub surfaces. `/signin` renders it too for the frame between a
+  // successful sign-in and the URL being replaced.
+  if (path === "/" || path === "/signin") return <DashboardPage />;
   return <TripsPage />;
 }
 
@@ -29,8 +34,16 @@ function Gate({
   isAuthenticated: boolean;
   initialSessionResolved: boolean;
 }) {
-  const { path } = useRouter();
+  const { path, replace } = useRouter();
   const inviteToken = matchInviteToken(path);
+
+  // Signing in leaves the URL on /signin, which is not a signed-in surface —
+  // without this the session lands on the trips hub instead of the dashboard.
+  useEffect(() => {
+    if (isAuthenticated && initialSessionResolved && path === "/signin") {
+      replace("/");
+    }
+  }, [isAuthenticated, initialSessionResolved, path, replace]);
 
   if (!initialSessionResolved) {
     return (

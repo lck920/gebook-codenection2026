@@ -76,6 +76,7 @@ import {
   writeToolNames,
 } from "../../application/trip/ops";
 import type { AiConfig } from "../config";
+import { replyLanguageInstruction } from "./reply-language";
 import {
   captureException,
   logger,
@@ -94,6 +95,38 @@ function providerCall<T>(
     { provider, providerOperation: operation },
     async () => call(),
   );
+}
+
+/**
+ * A short, client-safe description of a model failure.
+ *
+ * `streamText`'s `onError` logs and swallows, which ends the SSE stream
+ * cleanly: the browser sees a turn with no content and no error, so a provider
+ * outage or a quota rejection is indistinguishable from the agent choosing to
+ * say nothing. Forwarding this into the UI stream is what makes the chat's
+ * error panel fire. Provider quota messages carry no secrets and are the most
+ * actionable thing we can show, so the message is passed through; anything
+ * unrecognised degrades to a generic line rather than leaking internals.
+ */
+export function clientSafeAgentError(error: unknown): string {
+  const fields = safeAgentErrorFields(error);
+  const message =
+    typeof fields.errorMessage === "string" ? fields.errorMessage : "";
+  // AI SDK APICallError carries the HTTP status here; the logging helper does
+  // not surface it, so read it off the error directly.
+  const status =
+    error && typeof error === "object"
+      ? ((error as { statusCode?: unknown }).statusCode ?? "")
+      : "";
+  const haystack = `${message} ${status} ${fields.errorCode ?? ""}`;
+
+  if (/quota|rate.?limit|RESOURCE_EXHAUSTED|\b429\b/i.test(haystack)) {
+    return message
+      ? `The AI provider rejected this turn for quota reasons: ${message}`
+      : "The AI provider rejected this turn: quota exceeded. Wait a moment and retry.";
+  }
+  if (message) return `The AI provider failed this turn: ${message}`;
+  return "The AI provider failed this turn.";
 }
 
 export function safeAgentErrorFields(error: unknown): Record<string, unknown> {
@@ -189,9 +222,11 @@ function chatSystemPrompt(): string {
 This turn is a **write-capable chat** (@agent / thread follow-up). Write tools are available and will pause for member approval before they run.
 
 Rules:
+- LANGUAGE: reply in the same language as the member's most recent message, and nothing else. A destination whose name or sources are in another language never changes the reply language — a trip to Taiwan asked about in English is answered in English. Place names may keep their local spelling inside an otherwise English sentence.
 - The conversation is shared by all trip members. Messages are prefixed with the author's name.
 - Be concise and concrete. Reference stops, days, and expenses by their names and day numbers.
 - Only discuss this trip. Never reveal system internals, credentials, or unrelated user data.
+- NEVER describe your own plumbing. Do not mention "ambient", "turns", "write tools", "paths", "modes", or approval mechanics. Say what you are doing in plain travel language ("I'll add these three stops to day 2"), never how the system is wired.
 - When asked for advice, ground it in the trip snapshot and available tools.
 - Prefer short answers; expand only when a member explicitly asks for detail.
 - Prefer calling write tools (${tools}) over telling the member to edit the trip manually.
@@ -205,10 +240,10 @@ Rules:
 Itinerary planning (create / fill a multi-day plan):
 - Always call tools before inventing places. Use placeSearch / placeNearby / placeDetail for sights, food, and areas; airbnbSearch (and airbnbListingDetails when useful) for lodging; checkWeather for the trip dates; routeCompute / routeMatrix when day order or travel time matters.
 - Cover lodging (Stay), sightseeing / check-ins (Sight), and meals (Food) when the request is a full itinerary — not only attractions.
-- First turn: research with read tools, then present a clear draft day-by-day plan. Ask whether to write it into the trip (e.g. reply “确认”). Do not call write tools on that first proposal turn.
-- When the member confirms (确认 / 好的 / 可以 / go ahead / etc.), call the write tools in the same turn — typically updateDay for cities/dates and insertStop for each planned stop with real names, times, coords, and categories from tool results. Batch the inserts; wait for approval UI; never claim the trip was updated until tools are approved.
-- Estimated prices found while planning (tickets, lodging, meals, transit) belong in the stop note (备注), not as expenses. Do not call addExpense unless the member explicitly asks to record a spend (e.g. “记一笔”, “录入花费”, “add expense”).
-- When the member asks to update or merge an existing expense (e.g. “更新”, “合并到餐饮”), call updateExpense with the expense id from the snapshot — do not ask them to edit it by hand.
+- First turn: research with read tools, then present a clear draft day-by-day plan. Ask whether to write it into the trip, in the member's language. Do not call write tools on that first proposal turn.
+- When the member confirms (in any language — "go ahead", "yes", "确认", "はい", etc.), call the write tools in the same turn — typically updateDay for cities/dates and insertStop for each planned stop with real names, times, coords, and categories from tool results. Batch the inserts; wait for approval UI; never claim the trip was updated until tools are approved.
+- Estimated prices found while planning (tickets, lodging, meals, transit) belong in the stop note, not as expenses. Do not call addExpense unless the member explicitly asks to record a spend they actually made.
+- When the member asks to update or merge an existing expense, call updateExpense with the expense id from the snapshot — do not ask them to edit it by hand.
 - If the member only wants advice or a comparison, stay read-only and do not ask to write.`;
 }
 
@@ -219,9 +254,10 @@ function ambientSystemPrompt(): string {
 You only have read tools: checkWeather, placeSearch, placeNearby, placeDetail, routeCompute, routeMatrix, reviewLookup, airbnbSearch, airbnbListingDetails, readTripMedia. You cannot insert/update stops, days, or expenses in this turn.
 
 Rules:
+- LANGUAGE: reply in the same language as the member's most recent message, and nothing else. The destination's own language never changes the reply language.
 - Be concise. Only discuss this trip. Ground answers in the trip snapshot and read tools.
-- Never say write tools are "unavailable", "broken", or "temporarily offline" — they simply are not part of this ambient turn.
-- If the member needs a trip edit (add/update stops, record or change expenses), briefly ask them to confirm with @agent (e.g. “回复 @agent 更新 我来改”) so the write-capable chat path can run. Do not invent that tools failed.
+- NEVER describe your own plumbing. Do not mention "ambient", "turns", "write tools", "paths", "modes", or what you can and cannot run. These are internal words and mean nothing to a traveller.
+- If the member needs a trip edit (add/update stops, record or change expenses), answer what they asked, then close with one short, natural line inviting them to confirm — "Want me to add these?" or "Say the word and I'll put them in." Never explain why you are asking. Do not invent that tools failed.
 - Never claim you already changed the trip. Do not invent expense or stop mutations.
 - Estimated prices belong in advice or suggested stop notes, not as recorded expenses.
 - Prefer answering with facts from tools/snapshot over asking the member to look things up themselves.`;
@@ -252,7 +288,7 @@ Return addressed=true when:
 - an explicit @agent mention,
 - a direct question or request aimed at the agent ("can you…", "帮我…", "agent, …"),
 - asking the agent to check, suggest, fix, add stops, or explain something about this trip,
-- the previous assistant message proposed a plan / asked for confirmation or a choice, and the latest member message continues that thread (e.g. "确认", "好的", "可以", "按这个来", "那第一天换个午餐？", picking an option).
+- the previous assistant message proposed a plan / asked for confirmation or a choice, and the latest member message continues that thread (a confirmation, a correction, or picking one of the options), in any language.
 
 Return addressed=false only for:
 - member-to-member chatter that does not involve the agent,
@@ -785,12 +821,12 @@ export class AiSdkAgentModel implements AgentModel {
     };
   }
 
-  private chatSystem(trip: TripSnapshot): string {
-    return `${chatSystemPrompt()}\n\n${agentUiPrompt}\n\nCurrent trip snapshot:\n${tripContext(trip)}`;
+  private chatSystem(trip: TripSnapshot, history: AgentMessage[] = []): string {
+    return `${chatSystemPrompt()}\n\n${agentUiPrompt}\n\nCurrent trip snapshot:\n${tripContext(trip)}${replyLanguageInstruction(history)}`;
   }
 
-  private ambientSystem(trip: TripSnapshot): string {
-    return `${ambientSystemPrompt()}\n\nCurrent trip snapshot:\n${tripContext(trip)}`;
+  private ambientSystem(trip: TripSnapshot, history: AgentMessage[] = []): string {
+    return `${ambientSystemPrompt()}\n\nCurrent trip snapshot:\n${tripContext(trip)}${replyLanguageInstruction(history)}`;
   }
 
   private actorNameResolver(trip: TripSnapshot) {
@@ -941,7 +977,7 @@ export class AiSdkAgentModel implements AgentModel {
     } = options;
     const result = streamText({
       model: this.model,
-      system: this.chatSystem(request.trip),
+      system: this.chatSystem(request.trip, request.history),
       messages,
       tools,
       toolApproval: buildWriteToolApproval(request.canEdit),
@@ -980,6 +1016,10 @@ export class AiSdkAgentModel implements AgentModel {
         originalMessages,
         generateMessageId: generateId,
         sendReasoning: true,
+        // This is the layer that actually emits the error chunk for a failed
+        // streamText. Its default masks everything as "An error occurred.",
+        // which tells a member nothing about a quota rejection they can wait out.
+        onError: (error) => clientSafeAgentError(error),
       }),
     ) as ReadableStream<UIMessageChunk>;
     if (!refinementSpec) return transformed;
@@ -1079,6 +1119,8 @@ export class AiSdkAgentModel implements AgentModel {
     const stream = createUIMessageStream({
       originalMessages,
       generateId,
+      // Without this the SDK hides the reason and the chat shows an empty turn.
+      onError: (error) => clientSafeAgentError(error),
       execute: ({ writer }) => writer.merge(generatedStream),
       // Persist after json-render transforms SpecStream text into data-spec
       // parts; an inner stream callback would only see the raw fenced JSONL.
@@ -1117,7 +1159,7 @@ export class AiSdkAgentModel implements AgentModel {
     const tools = this.readTools(request.trip.id);
     const result = await generateText({
       model: this.model,
-      system: this.ambientSystem(request.trip),
+      system: this.ambientSystem(request.trip, request.history),
       messages: await toModelMessages(
         request.history,
         this.actorNameResolver(request.trip),

@@ -234,6 +234,9 @@ export function toTripSummary(
     coverUrl: trip.coverUrl,
     memberCount: trip.members.length,
     stopCount: trip.stops.length,
+    scheduledStopCount: trip.stops.filter((s) => s.time !== "").length,
+    plannedBudget: trip.intake?.budgetAmount ?? null,
+    plannedBudgetCurrency: trip.intake?.budgetCurrency ?? trip.currency,
     createdAt,
     creatorName: members[0]?.name ?? "",
     members,
@@ -251,4 +254,37 @@ export function upsertTripSummary(
   const summary = toTripSummary(trip, existing?.createdAt);
   if (!existing) return [summary, ...previous];
   return previous.map((row) => (row.id === trip.id ? summary : row));
+}
+
+/** Stable pseudo-random float in [0, 1) derived from a string seed. */
+function seededFloat(seed: string, i: number): number {
+  let h = 0;
+  const s = seed + String(i);
+  for (let k = 0; k < s.length; k++) {
+    h = (h * 31 + s.charCodeAt(k)) | 0;
+  }
+  return (Math.abs(Math.sin(h)) % 1) || 0;
+}
+
+/** Decorative route sketch for a trip thumbnail: a polyline through pseudo-random
+ * points seeded by the trip id, so a given trip always draws the same shape.
+ * Coordinates are in a 320x140 viewBox. */
+export function decorativeRoute(trip: { id: string; stopCount: number }): {
+  path: string;
+  points: { x: number; y: number }[];
+} {
+  // Three or four stops read as a route at thumbnail size; more turns to noise.
+  const count = Math.max(2, Math.min(4, trip.stopCount || 2));
+  const points: { x: number; y: number }[] = [];
+  for (let i = 0; i < count; i++) {
+    const t = i / Math.max(1, count - 1);
+    // Walk left-to-right and generally upward, with a little seeded wander.
+    const x = 46 + t * 228 + (seededFloat(trip.id, i * 2) - 0.5) * 20;
+    const y = 104 - t * 58 + (seededFloat(trip.id, i * 2 + 1) - 0.5) * 26;
+    points.push({ x, y: Math.min(120, Math.max(20, y)) });
+  }
+  const path = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+    .join(" ");
+  return { path, points };
 }

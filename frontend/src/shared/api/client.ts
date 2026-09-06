@@ -79,11 +79,95 @@ function handleLocalMockApi<T>(path: string, init?: RequestInit): T | null {
       days: [{ number: 1, date: "2025-11-01", dateLabel: "", city: body.destination || "Kuala Lumpur", color: "#116af8" }],
       stops: [],
       expenses: [],
+      contributions: [],
+      budgetItems: [],
       budget: { total: body.budgetAmount || 5000, perPerson: body.budgetAmount || 5000, balances: [], settlements: [] },
     };
     trips.unshift(newTrip);
     saveLocalTrips(trips);
     return newTrip as unknown as T;
+  }
+
+  // /api/trips/:id/budget-contributions
+  const poolMatch = /^\/api\/trips\/([^/]+)\/budget-contributions$/.exec(path);
+  if (poolMatch && method === "PUT") {
+    const body = init?.body
+      ? (JSON.parse(init.body as string) as {
+          memberId: string;
+          amount: number;
+          currency?: string;
+        })
+      : null;
+    const trips = getLocalTrips();
+    const trip = trips.find((t) => t.id === poolMatch[1]) ?? trips[0];
+    if (!trip || !body) return null;
+
+    const rest = (trip.contributions ?? []).filter(
+      (c) => c.memberId !== body.memberId,
+    );
+    // Mirrors the server: a zero contribution drops the row entirely.
+    trip.contributions =
+      body.amount > 0
+        ? [
+            ...rest,
+            {
+              memberId: body.memberId,
+              amount: Math.round(body.amount),
+              currency: body.currency || trip.currency,
+            },
+          ]
+        : rest;
+    saveLocalTrips(trips);
+    return trip as unknown as T;
+  }
+
+  // /api/trips/:id/budget-items
+  const itemsMatch = /^\/api\/trips\/([^/]+)\/budget-items$/.exec(path);
+  if (itemsMatch && method === "POST") {
+    const body = init?.body ? JSON.parse(init.body as string) : null;
+    const trips = getLocalTrips();
+    const trip = trips.find((t) => t.id === itemsMatch[1]) ?? trips[0];
+    if (!trip || !body) return null;
+    trip.budgetItems = [
+      ...(trip.budgetItems ?? []),
+      {
+        id: `bi-${Date.now()}`,
+        label: body.label,
+        category: body.category ?? "Plan",
+        amount: Math.round(body.amount),
+        currency: body.currency || trip.currency,
+        createdBy: trip.members.find((m) => m.isCurrentUser)?.id ?? "",
+      },
+    ];
+    saveLocalTrips(trips);
+    return trip as unknown as T;
+  }
+
+  const itemMatch = /^\/api\/trips\/([^/]+)\/budget-items\/([^/]+)$/.exec(path);
+  if (itemMatch && (method === "PATCH" || method === "DELETE")) {
+    const trips = getLocalTrips();
+    const trip = trips.find((t) => t.id === itemMatch[1]) ?? trips[0];
+    if (!trip) return null;
+    const itemId = itemMatch[2];
+
+    if (method === "DELETE") {
+      trip.budgetItems = (trip.budgetItems ?? []).filter((i) => i.id !== itemId);
+    } else {
+      const body = init?.body ? JSON.parse(init.body as string) : null;
+      if (!body) return null;
+      trip.budgetItems = (trip.budgetItems ?? []).map((i) =>
+        i.id === itemId
+          ? {
+              ...i,
+              label: body.label,
+              amount: Math.round(body.amount),
+              category: body.category ?? i.category,
+            }
+          : i,
+      );
+    }
+    saveLocalTrips(trips);
+    return trip as unknown as T;
   }
 
   // /api/preferences

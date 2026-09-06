@@ -119,9 +119,13 @@ function buildCreateInput(
 export function CreateTripWizardDialog({
   open,
   onOpenChange,
+  initialDestination,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Seeds the destination step, e.g. when opened from a suggested destination.
+   *  The wizard then starts on duration; a blank open still starts at the top. */
+  initialDestination?: string | null;
 }) {
   const { t, i18n } = useTranslation("trips");
   const { t: tc } = useTranslation("common");
@@ -170,8 +174,9 @@ export function CreateTripWizardDialog({
     onOpenChange(next);
     if (!next) reset();
     else {
-      setAnswers(emptyAnswers(preferredCurrency));
-      setStep("destination");
+      const seeded = initialDestination?.trim() || null;
+      setAnswers({ ...emptyAnswers(preferredCurrency), destination: seeded });
+      setStep(seeded ? "duration" : "destination");
       setDraftText("");
       setStepKey((k) => k + 1);
     }

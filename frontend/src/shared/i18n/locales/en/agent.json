@@ -11,7 +11,12 @@
     "agentName": "Agent",
     "systemName": "System",
     "operationBy": "{{name}}",
-    "thinking": "Thinking…"
+    "thinking": "Thinking…",
+    "failed": "The agent could not finish that reply.",
+    "failedRateLimited": "The AI provider is rate limiting this trip. Wait a moment, then retry.",
+    "retry": "Retry",
+    "dismiss": "Dismiss",
+    "working": "Working… this can take a while on a long request."
   },
   "attach": {
     "add": "Attach a file",
@@ -128,6 +133,8 @@
       "budgetWithCurrency": "budget {{amount}} {{currency}}",
       "party_one": "{{count}} person",
       "party_other": "{{count}} people"
-    }
+    },
+    "planTrip_one": "@agent Plan my {{count}}-day trip to {{destination}}. Suggest stops for each day with times, and add them to the itinerary once I confirm.",
+    "planTrip_other": "@agent Plan my {{count}}-day trip to {{destination}}. Suggest stops for each day with times, and add them to the itinerary once I confirm."
   }
 }

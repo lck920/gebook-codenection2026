@@ -18,6 +18,8 @@ function trip(id: string, title: string): Trip {
     days: [],
     stops: [],
     expenses: [],
+    contributions: [],
+    budgetItems: [],
     budget: { total: 0, perPerson: 0, balances: [], settlements: [] },
   };
 }

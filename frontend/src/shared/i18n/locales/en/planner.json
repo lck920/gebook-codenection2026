@@ -63,7 +63,9 @@
     "dayLabel": "Day",
     "timeLabel": "Time",
     "durationLabel": "Duration",
-    "costLabel": "Cost per person"
+    "costLabel": "Cost per person",
+    "delete": "Remove",
+    "deleteConfirm": "Remove “{{name}}” from the itinerary? This cannot be undone."
   },
   "schedule": {
     "insert": "Insert stop",
@@ -279,5 +281,42 @@
   },
   "nav": {
     "label": "Trip sections"
+  },
+  "compose": {
+    "add": "Add stop",
+    "addToDay": "Add a stop to day {{n}}",
+    "namePlaceholder": "Where to? e.g. Asakusa Temple",
+    "timePlaceholder": "Start time",
+    "cancel": "Cancel",
+    "confirm": "Add",
+    "empty": "Nothing planned for this day yet.",
+    "notOnMap": "Not on the map? Enter it yourself",
+    "backToSearch": "Search for a place instead"
+  },
+  "agentOff": {
+    "title": "Co-planner is off",
+    "body": "Add an AI key to .env (AI_API_KEY) and restart the API to plan by chat."
+  },
+  "place": {
+    "tabPlace": "Place",
+    "tabDetails": "Details",
+    "close": "Close place panel",
+    "openDetails": "Details & comments",
+    "googleMaps": "Google Maps",
+    "wikipedia": "Wikipedia",
+    "nearbyArticle": "Nearby: {{title}}",
+    "photoCredit": "Photos via Wikimedia Commons",
+    "noBackground": "No place background found for “{{name}}”.",
+    "lookupFailed": "Could not load place background.",
+    "hours": "Opening hours",
+    "website": "Website",
+    "ratingCount_one": "({{count}} review)",
+    "ratingCount_other": "({{count}} reviews)"
+  },
+  "emptyTrip": {
+    "title": "Nothing planned yet",
+    "body": "Tell the assistant where you are going and it will draft the days for you — or add stops yourself.",
+    "planWithAi": "Plan with AI",
+    "addManually": "Add a stop"
   }
 }

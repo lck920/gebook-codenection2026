@@ -1,7 +1,9 @@
 import { useTranslation } from "react-i18next";
 import {
+  ArrowRightIcon,
   BookOpenTextIcon,
   CalendarDaysIcon,
+  DollarSignIcon,
   MapIcon,
   MapPinIcon,
   PenLineIcon,
@@ -10,12 +12,13 @@ import type { TripSummary } from "@/entities/trip";
 import { cn } from "@/shared/lib";
 import type { LocalJournalEntry } from "../model/local-journal";
 
-export type HomeSurface = "today" | "trips" | "journal";
+export type HomeSurface = "today" | "trips" | "journal" | "finance";
 
 const NAV_ITEMS = [
   { id: "trips", href: "/", icon: MapIcon },
   { id: "today", href: "/today", icon: CalendarDaysIcon },
   { id: "journal", href: "/journal", icon: BookOpenTextIcon },
+  { id: "finance", href: "/finance", icon: DollarSignIcon },
 ] as const;
 
 interface HomeNavigationProps {
@@ -55,7 +58,7 @@ export function HomeSidebar({
               className={cn(
                 "wf-interactive wf-pressable flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium",
                 active
-                  ? "bg-card text-foreground shadow-[var(--shadow-border)]"
+                  ? "bg-brand text-brand-foreground shadow-[0_6px_14px_-6px_var(--brand)]"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground",
               )}
             >
@@ -76,6 +79,24 @@ export function HomeSidebar({
         </span>
         <span className="text-sm font-semibold">{t("home.record")}</span>
       </button>
+
+      {recentTrips.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => onNavigate(`/trips/${recentTrips[0]!.id}`)}
+          className="wf-interactive wf-pressable mt-4 rounded-2xl bg-accent p-4 text-left"
+        >
+          <p className="text-[13px] font-bold text-accent-foreground">
+            {t("dashboard.ai.title")}
+          </p>
+          <p className="mt-1.5 text-[11.5px] leading-[17px] text-muted-foreground">
+            {t("dashboard.ai.body")}
+          </p>
+          <span className="mt-3 flex size-8 items-center justify-center rounded-full bg-brand text-brand-foreground">
+            <ArrowRightIcon className="size-3.5" aria-hidden="true" />
+          </span>
+        </button>
+      ) : null}
 
       <div className="mt-7 min-h-0 flex-1 overflow-y-auto">
         {recentTrips.length > 0 ? (
@@ -146,7 +167,7 @@ export function MobileHomeNav({
   return (
     <nav
       aria-label={t("home.nav.label")}
-      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-border bg-card/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-border bg-card/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
     >
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;

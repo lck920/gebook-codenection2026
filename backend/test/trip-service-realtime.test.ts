@@ -10,6 +10,7 @@ function fixture() {
     findById: vi.fn(async () => trip),
     create: vi.fn(async () => {}),
     addMember: vi.fn(async () => {}),
+    setStatus: vi.fn(async () => {}),
     rename: vi.fn(async () => {}),
     clearAgentSeedPending: vi.fn(async () => {}),
     updateIntake: vi.fn(async () => {}),

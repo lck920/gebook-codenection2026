@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowRightIcon } from "lucide-react";
-import type { TripSummary } from "@/entities/trip";
+import { decorativeRoute, type TripSummary } from "@/entities/trip";
 import { Badge } from "@/shared/ui/badge";
 import { Card } from "@/shared/ui/card";
 import { Avatar } from "@/shared/ui/avatar";
@@ -17,37 +17,6 @@ const STATUS_VARIANT = {
   settled: "success",
 } as const;
 
-/** Stable pseudo-random float in [0, 1) derived from a string seed. */
-function seededFloat(seed: string, i: number): number {
-  let h = 0;
-  const s = seed + String(i);
-  for (let k = 0; k < s.length; k++) {
-    h = (h * 31 + s.charCodeAt(k)) | 0;
-  }
-  return (Math.abs(Math.sin(h)) % 1) || 0;
-}
-
-/** Generate a decorative route map path and stop circles for a trip card. */
-function routeMapForTrip(trip: TripSummary): {
-  path: string;
-  points: { x: number; y: number }[];
-} {
-  const count = Math.max(2, Math.min(6, trip.stopCount || 2));
-  const points: { x: number; y: number }[] = [];
-  for (let i = 0; i < count; i++) {
-    const t = i / Math.max(1, count - 1);
-    const x = 40 + t * 240 + (seededFloat(trip.id, i * 2) - 0.5) * 24;
-    const y = 42 + seededFloat(trip.id, i * 2 + 1) * 62;
-    points.push({ x, y });
-  }
-
-  const path = points
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
-    .join(" ");
-
-  return { path, points };
-}
-
 export function TripCard({
   trip,
   onOpen,
@@ -62,7 +31,7 @@ export function TripCard({
 
   const shown = trip.members.slice(0, MAX_AVATARS);
   const overflow = trip.members.length - shown.length;
-  const route = routeMapForTrip(trip);
+  const route = decorativeRoute(trip);
   const routeColor = trip.status === "active" ? trip.coverColor : "var(--ink-400)";
   const showMap = Boolean(trip.location);
   const showCover = !showMap && Boolean(trip.coverUrl) && !coverFailed;

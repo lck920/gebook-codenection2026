@@ -16,6 +16,24 @@ import {
   type AgentDisplayMessage,
 } from "./AgentMessage";
 
+/** After this long with no token, reassure rather than look hung. */
+const SLOW_REPLY_MS = 8_000;
+
+/** Whether a live message has anything a reader would actually see yet. */
+function hasVisibleContent(message: AgentDisplayMessage): boolean {
+  return (message.parts ?? []).some((part) => {
+    if (part.type === "text" || part.type === "reasoning") {
+      return typeof part.text === "string" && part.text.trim().length > 0;
+    }
+    return part.type !== "step-start";
+  });
+}
+
+/** Groq (and most providers) answer an over-budget turn with HTTP 429. */
+function isRateLimit(error: Error): boolean {
+  return /429|rate.?limit|quota|too many requests/i.test(error.message);
+}
+
 /** Message list + sticky input for the shared trip session. */
 export function AgentChat({
   tripId,
@@ -27,6 +45,8 @@ export function AgentChat({
   onDenySuggestion,
   onFocusDay,
   onFocusStop,
+  draftSuggestion = null,
+  draftSuggestionKey,
 }: {
   tripId: string;
   trip: Trip;
@@ -38,18 +58,29 @@ export function AgentChat({
   onDenySuggestion: (suggestion: AgentSuggestion) => void;
   onFocusDay: (dayNumber: number) => void;
   onFocusStop: (stopId: string) => void;
+  /** Page-owned draft (e.g. "Plan with AI"), filled in but never auto-sent. */
+  draftSuggestion?: string | null;
+  /** Changes per request, so the same suggestion can be offered again. */
+  draftSuggestionKey?: string;
 }) {
   const { t } = useTranslation("agent");
   const queryClient = useQueryClient();
+  const memberNames = trip.members
+    .filter((m) => !m.isCurrentUser)
+    .map((m) => m.name);
   const {
     history,
     historyPending,
     liveMessages,
     streaming,
+    awaitingReply,
+    error,
+    retry,
+    clearError,
     send,
     addToolApprovalResponse,
     streamDebug,
-  } = useAgentChat(tripId, enabled);
+  } = useAgentChat(tripId, enabled, memberNames);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [quote, setQuote] = useState<QuoteTarget | null>(null);
 
@@ -105,13 +136,16 @@ export function AgentChat({
 
   // Wizard intake is a suggested first prompt, never an automatic agent turn.
   // Keep the panel-opening behavior, then let the member edit or send it.
-  const initialDraft =
+  const wizardDraft =
     enabled &&
     !historyPending &&
     trip.agentSeedPending &&
     messages.length === 0
       ? buildAgentSeedMessage(t, trip.intake)
       : null;
+  // An explicit request beats the wizard's standing suggestion.
+  const initialDraft = draftSuggestion ?? wizardDraft;
+  const initialDraftKey = draftSuggestion ? draftSuggestionKey : tripId;
 
   const sendFromComposer = async (text: string, files: File[] = []) => {
     await send(text, files);
@@ -119,6 +153,22 @@ export function AgentChat({
     const updated = await clearAgentSeedPending(tripId);
     queryClient.setQueryData(queryKeys.trip(tripId), updated);
   };
+
+  const assistantHasContent = live.some(
+    (m) => m.role === "assistant" && hasVisibleContent(m),
+  );
+  const thinking = (streaming && !assistantHasContent) || awaitingReply;
+
+  // Long tool-calling turns look identical to a hang; say so after a while.
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!thinking) {
+      setSlow(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlow(true), SLOW_REPLY_MS);
+    return () => clearTimeout(timer);
+  }, [thinking]);
 
   // Follow both new messages and in-place part growth during streaming
   // (text deltas and DeepSeek reasoning deltas).
@@ -135,7 +185,7 @@ export function AgentChat({
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages.length, streaming, streamFingerprint]);
+  }, [messages.length, streaming, awaitingReply, streamFingerprint]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -175,10 +225,39 @@ export function AgentChat({
             />
           ))
         )}
-        {streaming && live.every((m) => m.role !== "assistant") ? (
+        {thinking ? (
           <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
             <Spinner className="size-3" />
-            <span>{t("panel.thinking")}</span>
+            <span>{slow ? t("panel.working") : t("panel.thinking")}</span>
+          </div>
+        ) : null}
+
+        {error ? (
+          <div className="flex flex-col gap-1.5 rounded-xl bg-[var(--warn-bg,#fff8ec)] px-3 py-2.5 text-[var(--warn-fg,#8a5209)]">
+            <p className="text-xs font-semibold text-pretty">
+              {isRateLimit(error)
+                ? t("panel.failedRateLimited")
+                : t("panel.failed")}
+            </p>
+            <p className="font-mono text-[10.5px] break-words opacity-80">
+              {error.message}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => void retry()}
+                className="wf-interactive wf-pressable h-7 rounded-[9px] bg-foreground px-2.5 text-[11.5px] font-semibold text-background"
+              >
+                {t("panel.retry")}
+              </button>
+              <button
+                type="button"
+                onClick={clearError}
+                className="wf-interactive h-7 rounded-[9px] px-2 text-[11.5px] font-semibold hover:underline"
+              >
+                {t("panel.dismiss")}
+              </button>
+            </div>
           </div>
         ) : null}
       </div>
@@ -187,7 +266,7 @@ export function AgentChat({
         trip={trip}
         onSend={sendFromComposer}
         initialDraft={initialDraft}
-        initialDraftKey={tripId}
+        initialDraftKey={initialDraftKey}
         quote={quote}
         onClearQuote={() => setQuote(null)}
       />

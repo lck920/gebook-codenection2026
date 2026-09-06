@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import {
@@ -22,10 +22,14 @@ import {
 import { uploadTripMedia } from "@/shared/api/media";
 import { config, queryKeys } from "@/shared/config";
 import { looksLikeAgentThreadFollowUp } from "../lib/agentThreadFollowUp";
+import { looksLikeTripWriteRequest } from "../lib/tripWriteIntent";
 import { mergeTripToolEcho } from "./mergeTripToolEcho";
 import type { AgentUIMessage } from "./agent-ui-message";
 
 const MENTION_PATTERN = /@agent\b/i;
+
+/** Stop showing "thinking" if the server never produces an ambient reply. */
+const AMBIENT_WAIT_CEILING_MS = 90_000;
 
 /**
  * Fold write-tool trip echoes onto the current trip cache.
@@ -140,13 +144,24 @@ function liveMessageToAgentMessage(
   };
 }
 
-function hasPendingToolApproval(messages: UIMessage[]): boolean {
+/**
+ * Is a tool approval still in flight — either waiting on the member, or
+ * answered but not yet executed?
+ *
+ * Both halves matter. Answering an approval flips the part to
+ * `approval-responded`, which is exactly what makes the AI SDK auto-send the
+ * continuation turn. Treating that as "settled" cleared the live buffer out
+ * from under that send, so the continuation posted an empty message list and
+ * the server rejected it as `empty_message`. The parts only become
+ * `output-*` once the tool has actually run, which is the real end of the turn.
+ */
+export function hasPendingToolApproval(messages: UIMessage[]): boolean {
   return messages.some((m) =>
     m.parts.some(
       (p) =>
         isToolUIPart(p) &&
-        p.state === "approval-requested" &&
-        !p.approval?.isAutomatic,
+        ((p.state === "approval-requested" && !p.approval?.isAutomatic) ||
+          p.state === "approval-responded"),
     ),
   );
 }
@@ -188,8 +203,17 @@ function mediaTypeOf(file: File): string {
  * thread follow-ups (e.g. “确认”) that need write tools + approval.
  * On settle, live turns are write-echoed into history (same UIMessage ids the
  * server persists) and the buffer is cleared — no invalidate/refetch race. */
-export function useAgentChat(tripId: string, enabled: boolean) {
+export function useAgentChat(
+  tripId: string,
+  enabled: boolean,
+  /** Member display names, so `@Teammate` lines are not hijacked by the agent. */
+  memberNames: string[] = [],
+) {
   const queryClient = useQueryClient();
+  // Ambient replies are generated server-side and arrive by polling, so the
+  // chat would otherwise sit silent for the whole round trip. Track the seq we
+  // are waiting past to show a pending row and poll faster until it lands.
+  const [awaitingAfterSeq, setAwaitingAfterSeq] = useState<number | null>(null);
   const streamDebugRef = useRef<{
     requestId?: string;
     turnId?: string;
@@ -199,7 +223,26 @@ export function useAgentChat(tripId: string, enabled: boolean) {
     queryKey: queryKeys.agentMessages(tripId),
     queryFn: () => fetchAgentMessages(tripId),
     enabled,
+    // Only while an ambient reply is outstanding; the 12s useAgentEvents poll
+    // covers the idle case, and refetching mid-stream would wipe write echoes.
+    refetchInterval: awaitingAfterSeq === null ? false : 2_500,
   });
+
+  const historyMessages = history.data?.messages;
+  useEffect(() => {
+    if (awaitingAfterSeq === null) return;
+    const landed = (historyMessages ?? []).some(
+      (m) => m.role === "assistant" && m.seq > awaitingAfterSeq,
+    );
+    if (landed) setAwaitingAfterSeq(null);
+  }, [awaitingAfterSeq, historyMessages]);
+
+  // Ceiling, so a failed or silent server turn cannot pin the indicator on.
+  useEffect(() => {
+    if (awaitingAfterSeq === null) return;
+    const timer = setTimeout(() => setAwaitingAfterSeq(null), AMBIENT_WAIT_CEILING_MS);
+    return () => clearTimeout(timer);
+  }, [awaitingAfterSeq]);
 
   const transport = useMemo(
     () =>
@@ -284,9 +327,13 @@ export function useAgentChat(tripId: string, enabled: boolean) {
     ];
     const useStream =
       MENTION_PATTERN.test(trimmed) ||
-      looksLikeAgentThreadFollowUp(threadForFollowUp, trimmed);
+      looksLikeAgentThreadFollowUp(threadForFollowUp, trimmed) ||
+      looksLikeTripWriteRequest(trimmed, memberNames);
 
     if (useStream) {
+      // Stop the ambient poll before opening a stream: a history refetch
+      // landing mid-turn would replace the cache and drop write echoes.
+      setAwaitingAfterSeq(null);
       await chat.sendMessage({
         role: "user",
         parts: [
@@ -311,6 +358,9 @@ export function useAgentChat(tripId: string, enabled: boolean) {
       (old: AgentHistory | undefined) =>
         appendAgentMessageToHistory(old, message),
     );
+    // The server decides whether this was addressed to the agent; wait for a
+    // reply past this message rather than leaving the member staring at silence.
+    setAwaitingAfterSeq(message.seq);
   };
 
   return {
@@ -318,6 +368,9 @@ export function useAgentChat(tripId: string, enabled: boolean) {
     historyPending: history.isPending,
     liveMessages: chat.messages,
     streaming: status === "streaming" || status === "submitted",
+    awaitingReply: awaitingAfterSeq !== null,
+    retry: chat.regenerate,
+    clearError: chat.clearError,
     error: chat.error,
     send,
     addToolApprovalResponse: chat.addToolApprovalResponse,

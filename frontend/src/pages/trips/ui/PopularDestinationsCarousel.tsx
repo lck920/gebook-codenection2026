@@ -1,70 +1,10 @@
 import { useState } from "react";
-import { Card } from "@/shared/ui/card";
+import {
+  POPULAR_DESTINATIONS,
+  type DestinationTemplate,
+} from "@/entities/destination";
 import { Badge } from "@/shared/ui/badge";
 
-export interface DestinationTemplate {
-  id: string;
-  name: string;
-  country: string;
-  rating: number;
-  badge?: string;
-  description: string;
-  image: string;
-  days: number;
-  estimatedBudget: string;
-  tags: string[];
-}
-
-export const POPULAR_DESTINATIONS: DestinationTemplate[] = [
-  {
-    id: "genin-lake",
-    name: "Genin Lake",
-    country: "France",
-    rating: 4.9,
-    badge: "New for you",
-    description: "Serene alpine lake surrounded by pine forests and scenic trails in eastern France.",
-    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80",
-    days: 4,
-    estimatedBudget: "$650 / person",
-    tags: ["Nature", "Hiking", "Alpine"],
-  },
-  {
-    id: "lake-como",
-    name: "Lake Como",
-    country: "Italy",
-    rating: 4.8,
-    badge: "Top Pick",
-    description: "Dramatic scenery, neoclassical villas, and lakeside dining in Lombardy.",
-    image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80",
-    days: 5,
-    estimatedBudget: "$890 / person",
-    tags: ["Romantic", "Scenic", "Dining"],
-  },
-  {
-    id: "banff-park",
-    name: "Banff National Park",
-    country: "Canada",
-    rating: 4.9,
-    badge: "Adventure",
-    description: "Turquoise glacial lakes, majestic Canadian Rockies, and vibrant wildlife.",
-    image: "https://images.unsplash.com/photo-1503614472-8c93d56e92ce?w=800&auto=format&fit=crop&q=80",
-    days: 6,
-    estimatedBudget: "$1,100 / person",
-    tags: ["Mountains", "Wildlife", "Kayaking"],
-  },
-  {
-    id: "kyoto-old-town",
-    name: "Kyoto & Arashiyama",
-    country: "Japan",
-    rating: 4.9,
-    badge: "Culture",
-    description: "Historic bamboo groves, ancient shrines, and traditional tea ceremonies.",
-    image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&auto=format&fit=crop&q=80",
-    days: 5,
-    estimatedBudget: "$950 / person",
-    tags: ["Culture", "Food", "History"],
-  },
-];
 
 interface PopularDestinationsCarouselProps {
   onSelectDestination?: (destination: DestinationTemplate) => void;

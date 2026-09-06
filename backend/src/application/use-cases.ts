@@ -3,6 +3,8 @@ import type { CoverImageProvider } from "../domain/cover";
 import {
   Trip,
   type AddExpenseDraft,
+  type BudgetItemDraft,
+  type TripStatus,
   type CreateTripDraft,
   type InsertStopDraft,
   type MoveStopDraft,
@@ -278,6 +280,18 @@ export class TripService {
     return toTripDto(trip, userId);
   }
 
+  async removeStop(
+    tripId: string,
+    stopId: string,
+    userId: string,
+  ): Promise<TripDto> {
+    const trip = await this.loadEditable(tripId, userId);
+    trip.removeStop(stopId);
+    await this.repo.save(trip);
+    await this.publishChange(trip, userId, ["stops"]);
+    return toTripDto(trip, userId);
+  }
+
   async moveStop(
     tripId: string,
     draft: MoveStopDraft,
@@ -322,6 +336,72 @@ export class TripService {
   ): Promise<TripDto> {
     const trip = await this.loadEditable(tripId, userId);
     trip.addExpense(draft);
+    await this.repo.save(trip);
+    await this.publishChange(trip, userId, ["expenses"]);
+    return toTripDto(trip, userId);
+  }
+
+  /** Lock or reopen the plan: planning → active → settled. */
+  async setTripStatus(
+    tripId: string,
+    status: TripStatus,
+    userId: string,
+  ): Promise<TripDto> {
+    const trip = await this.loadEditable(tripId, userId);
+    trip.setStatus(status);
+    await this.repo.setStatus(tripId, status);
+    return toTripDto(trip, userId);
+  }
+
+  /** Add a planned cost that is not attached to an itinerary stop. */
+  async addBudgetItem(
+    tripId: string,
+    draft: BudgetItemDraft,
+    userId: string,
+  ): Promise<TripDto> {
+    const trip = await this.loadEditable(tripId, userId);
+    const member = trip.memberByUserId(userId);
+    trip.addBudgetItem({ ...draft, createdBy: member?.id });
+    await this.repo.save(trip);
+    await this.publishChange(trip, userId, ["expenses"]);
+    return toTripDto(trip, userId);
+  }
+
+  async updateBudgetItem(
+    tripId: string,
+    itemId: string,
+    draft: BudgetItemDraft,
+    userId: string,
+  ): Promise<TripDto> {
+    const trip = await this.loadEditable(tripId, userId);
+    trip.updateBudgetItem(itemId, draft);
+    await this.repo.save(trip);
+    await this.publishChange(trip, userId, ["expenses"]);
+    return toTripDto(trip, userId);
+  }
+
+  async removeBudgetItem(
+    tripId: string,
+    itemId: string,
+    userId: string,
+  ): Promise<TripDto> {
+    const trip = await this.loadEditable(tripId, userId);
+    trip.removeBudgetItem(itemId);
+    await this.repo.save(trip);
+    await this.publishChange(trip, userId, ["expenses"]);
+    return toTripDto(trip, userId);
+  }
+
+  /** Set the signed-in user's (or a named member's) budget-pool contribution. */
+  async setBudgetContribution(
+    tripId: string,
+    memberId: string,
+    amount: number,
+    currency: string | undefined,
+    userId: string,
+  ): Promise<TripDto> {
+    const trip = await this.loadEditable(tripId, userId);
+    trip.setContribution(memberId, amount, currency);
     await this.repo.save(trip);
     await this.publishChange(trip, userId, ["expenses"]);
     return toTripDto(trip, userId);

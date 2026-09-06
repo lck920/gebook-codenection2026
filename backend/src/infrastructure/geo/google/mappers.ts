@@ -40,6 +40,7 @@ export function mapGooglePlace(place: GooglePlace): GeoPlace | null {
     phone: place.nationalPhoneNumber ?? place.internationalPhoneNumber,
     website: place.websiteUri,
     openingHours: place.regularOpeningHours?.weekdayDescriptions,
+    summary: place.editorialSummary?.text,
   };
 }
 

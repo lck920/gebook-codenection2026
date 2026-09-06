@@ -1,6 +1,11 @@
 import type { TripMember } from "@/entities/member";
 import type { Stop } from "@/entities/stop";
-import type { Budget, Expense } from "@/entities/expense";
+import type {
+  Budget,
+  BudgetContribution,
+  BudgetItem,
+  Expense,
+} from "@/entities/expense";
 
 export type TripStatus = "active" | "planning" | "settled";
 
@@ -36,6 +41,12 @@ export interface TripSummary {
   coverUrl: string | null;
   memberCount: number;
   stopCount: number;
+  /** Stops with a start time set, for the "n of m scheduled" progress read-out. */
+  scheduledStopCount: number;
+  /** Budget captured in the create wizard; null when the trip never set one. */
+  plannedBudget: number | null;
+  /** Currency of `plannedBudget`; falls back to the trip currency. */
+  plannedBudgetCurrency: string | null;
   /** Creation time as an ISO 8601 string. */
   createdAt: string;
   /** Display name of the trip creator. */
@@ -85,5 +96,9 @@ export interface Trip {
   days: TripDay[];
   stops: Stop[];
   expenses: Expense[];
+  /** Per-traveller stakes in the shared budget pool. */
+  contributions: BudgetContribution[];
+  /** Planned costs that are not tied to an itinerary stop. */
+  budgetItems: BudgetItem[];
   budget: Budget;
 }
