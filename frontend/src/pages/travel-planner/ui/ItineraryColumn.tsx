@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { MapPinOffIcon, PlusIcon, SparklesIcon } from "lucide-react";
@@ -11,6 +11,11 @@ import { Input } from "@/shared/ui/input";
 import { cn, interactive } from "@/shared/lib";
 import { DayCard } from "./itinerary/DayCard";
 import { ItineraryItemCard } from "./itinerary/ItineraryItemCard";
+import { ItineraryDropLine } from "./itinerary/ItineraryDropLine";
+import {
+  useItineraryStopDrag,
+  type ItineraryStopMoveInput,
+} from "./itinerary/useItineraryStopDrag";
 import { PlaceSearch } from "./PlaceSearch";
 import type { ComposeDraft } from "./ScheduleBoard";
 
@@ -41,6 +46,7 @@ export function ItineraryColumn({
   onDeleteDay,
   onReorderDays,
   onDeleteStop,
+  onMoveStop,
 }: {
   trip: Trip;
   /** Focuses the map on a day; the day cards drive this via their Map action. */
@@ -65,6 +71,8 @@ export function ItineraryColumn({
   onDeleteDay: (dayNumber: number) => void;
   onReorderDays: (order: number[]) => void;
   onDeleteStop: (stopId: string) => void;
+  /** Move a stop to another day, or reorder it within its day. */
+  onMoveStop?: (input: ItineraryStopMoveInput) => void;
 }) {
   const { t } = useTranslation("planner");
 
@@ -96,6 +104,23 @@ export function ItineraryColumn({
     });
 
   const tripEmpty = trip.stops.length === 0;
+
+  const stopDrag = useItineraryStopDrag(
+    trip,
+    canEdit ? onMoveStop : undefined,
+  );
+
+  // Dragging a stop onto a folded day opens it so the drop position is visible.
+  const hoverDay = stopDrag.hoverDay;
+  useEffect(() => {
+    if (hoverDay == null) return;
+    setCollapsed((current) => {
+      if (!current.has(hoverDay)) return current;
+      const next = new Set(current);
+      next.delete(hoverDay);
+      return next;
+    });
+  }, [hoverDay]);
 
   const moveDay = (index: number, direction: -1 | 1) => {
     const order = trip.days.map((d) => d.number);
@@ -147,9 +172,18 @@ export function ItineraryColumn({
               s.transit || s.category === "Transit" ? 0 : ++activityNumber,
             );
 
+            const dropIndex =
+              stopDrag.dropSlot?.day === d.number
+                ? stopDrag.dropSlot.index
+                : null;
+
             return (
-              <DayCard
+              <div
                 key={d.number}
+                ref={stopDrag.registerDay(d.number)}
+                className="flex-none"
+              >
+              <DayCard
                 trip={trip}
                 day={d}
                 position={index}
@@ -168,26 +202,43 @@ export function ItineraryColumn({
                 onDelete={() => onDeleteDay(d.number)}
                 onMove={(direction) => moveDay(index, direction)}
               >
-                {stops.length === 0 && !composing ? (
+                {stops.length === 0 && !composing && dropIndex == null ? (
                   <p className="px-1 py-2 text-xs text-muted-foreground">
                     {t("days.emptyDay")}
                   </p>
                 ) : null}
 
                 {stops.map((stop, stopIndex) => (
-                  <ItineraryItemCard
-                    key={stop.id}
-                    trip={trip}
-                    stop={stop}
-                    index={railNumbers[stopIndex] ?? stopIndex + 1}
-                    last={stopIndex === stops.length - 1 && !composing}
-                    selected={stop.id === selectedStopId}
-                    reservationCount={reservationCountByStop.get(stop.id) ?? 0}
-                    canEdit={canEdit}
-                    onSelect={() => onSelectStop(stop.id)}
-                    onDelete={() => onDeleteStop(stop.id)}
-                  />
+                  <Fragment key={stop.id}>
+                    {dropIndex === stopIndex ? <ItineraryDropLine /> : null}
+                    <div ref={stopDrag.registerStop(stop.id)}>
+                      <ItineraryItemCard
+                        trip={trip}
+                        stop={stop}
+                        index={railNumbers[stopIndex] ?? stopIndex + 1}
+                        last={stopIndex === stops.length - 1 && !composing}
+                        selected={stop.id === selectedStopId}
+                        reservationCount={
+                          reservationCountByStop.get(stop.id) ?? 0
+                        }
+                        canEdit={canEdit}
+                        onSelect={() => onSelectStop(stop.id)}
+                        onDelete={() => onDeleteStop(stop.id)}
+                        dragHandleProps={
+                          canEdit && onMoveStop
+                            ? stopDrag.handleProps(stop.id, d.number)
+                            : undefined
+                        }
+                        dragging={stopDrag.draggedStopId === stop.id}
+                        style={stopDrag.stopStyle(stop.id)}
+                      />
+                    </div>
+                  </Fragment>
                 ))}
+
+                {dropIndex != null && dropIndex >= stops.length ? (
+                  <ItineraryDropLine />
+                ) : null}
 
                 {composing ? (
                   <div className="ml-10">
@@ -203,6 +254,7 @@ export function ItineraryColumn({
                   </div>
                 ) : null}
               </DayCard>
+              </div>
             );
           })
         )}

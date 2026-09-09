@@ -5,7 +5,7 @@ import {
   getLocalTripSummaries,
   saveLocalTrips,
 } from "@/shared/lib/local-test-mode";
-import type { Trip } from "@/entities/trip";
+import { moveTripStop, type Trip } from "@/entities/trip";
 
 export class ApiError extends Error {
   constructor(
@@ -168,6 +168,26 @@ function handleLocalMockApi<T>(path: string, init?: RequestInit): T | null {
     }
     saveLocalTrips(trips);
     return trip as unknown as T;
+  }
+
+  // /api/trips/:id/stops/:stopId/position — move a stop between/within days
+  const positionMatch =
+    /^\/api\/trips\/([^/]+)\/stops\/([^/]+)\/position$/.exec(path);
+  if (positionMatch && method === "PUT") {
+    const body = init?.body
+      ? (JSON.parse(init.body as string) as { day: number; index: number })
+      : null;
+    const trips = getLocalTrips();
+    const trip = trips.find((t) => t.id === positionMatch[1]) ?? trips[0];
+    if (!trip || !body) return null;
+    const moved = moveTripStop(trip, {
+      stopId: positionMatch[2]!,
+      day: body.day,
+      index: body.index,
+    });
+    const next = trips.map((t) => (t.id === trip.id ? moved : t));
+    saveLocalTrips(next);
+    return moved as unknown as T;
   }
 
   // /api/preferences

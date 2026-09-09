@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import type { Trip } from "@/entities/trip";
 import { dayDateLabel, findDay } from "@/entities/trip";
@@ -7,6 +8,11 @@ import { ScrollEdgeFade } from "@/shared/ui/scroll-edge-fade";
 import { DayPills } from "./DayPills";
 import { StopCard } from "./StopCard";
 import { StopDetail } from "./StopDetail";
+import { ItineraryDropLine } from "./itinerary/ItineraryDropLine";
+import {
+  useItineraryStopDrag,
+  type ItineraryStopMoveInput,
+} from "./itinerary/useItineraryStopDrag";
 
 export interface SidebarProps {
   trip: Trip;
@@ -22,6 +28,8 @@ export interface SidebarProps {
   commentPending?: boolean;
   onUpdateStop: (stopId: string, patch: UpdateStopInput) => void;
   onChangeStopDay: (stopId: string, day: number) => void;
+  /** Drag a stop between days, or reorder it within its day. */
+  onMoveStop?: (input: ItineraryStopMoveInput) => void;
   onExpandNote: (stopId: string) => void;
   onWriteTravelogue: (stopId: string) => void;
 }
@@ -35,6 +43,11 @@ export function Sidebar(props: SidebarProps) {
     : undefined;
 
   const visibleDays = day === 0 ? trip.days : trip.days.filter((d) => d.number === day);
+
+  const stopDrag = useItineraryStopDrag(
+    trip,
+    props.canEdit ? props.onMoveStop : undefined,
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -67,8 +80,17 @@ export function Sidebar(props: SidebarProps) {
           >
             {visibleDays.map((d) => {
               const dayStops = trip.stops.filter((s) => s.day === d.number);
+              const dropIndex =
+                stopDrag.dropSlot?.day === d.number
+                  ? stopDrag.dropSlot.index
+                  : null;
+              const canDrag = props.canEdit && Boolean(props.onMoveStop);
               return (
-                <div key={d.number} className="flex flex-col gap-2.5 pb-2.5">
+                <div
+                  key={d.number}
+                  ref={stopDrag.registerDay(d.number)}
+                  className="flex flex-col gap-2.5 pb-2.5"
+                >
                   <div className="sticky top-0 z-[2] flex items-center gap-2 border-y border-border bg-card px-4 py-2">
                     <span
                       className="size-2.5 flex-none rounded-full"
@@ -86,15 +108,30 @@ export function Sidebar(props: SidebarProps) {
                     <DayWeatherIcon trip={trip} dayNumber={d.number} size={18} />
                   </div>
                   <div className="flex flex-col gap-2.5 px-4">
-                    {dayStops.map((s) => (
-                      <StopCard
-                        key={s.id}
-                        trip={trip}
-                        stop={s}
-                        selected={s.id === selectedStopId}
-                        onSelect={props.onSelectStop}
-                      />
+                    {dayStops.map((s, stopIndex) => (
+                      <Fragment key={s.id}>
+                        {dropIndex === stopIndex ? <ItineraryDropLine /> : null}
+                        <div ref={stopDrag.registerStop(s.id)}>
+                          <StopCard
+                            trip={trip}
+                            stop={s}
+                            selected={s.id === selectedStopId}
+                            onSelect={props.onSelectStop}
+                            gripHandle
+                            dragHandleProps={
+                              canDrag
+                                ? stopDrag.handleProps(s.id, d.number)
+                                : undefined
+                            }
+                            dragging={stopDrag.draggedStopId === s.id}
+                            style={stopDrag.stopStyle(s.id)}
+                          />
+                        </div>
+                      </Fragment>
                     ))}
+                    {dropIndex != null && dropIndex >= dayStops.length ? (
+                      <ItineraryDropLine />
+                    ) : null}
                   </div>
                 </div>
               );

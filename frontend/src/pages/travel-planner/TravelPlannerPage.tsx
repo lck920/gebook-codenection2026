@@ -587,6 +587,7 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
       const index = trip.stops.filter((s) => s.day === targetDay).length;
       actions.stopMove.mutate({ stopId, day: targetDay, index });
     },
+    onMoveStop: (input) => actions.stopMove.mutate(input),
     onExpandNote: openNoteEditor,
     onWriteTravelogue: (stopId) => {
       const stop = trip.stops.find((candidate) => candidate.id === stopId);
@@ -882,6 +883,7 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
                   onDeleteDay={(dayNumber) => actions.dayDelete.mutate(dayNumber)}
                   onReorderDays={(order) => actions.dayReorder.mutate(order)}
                   onDeleteStop={removeStop}
+                  onMoveStop={(input) => actions.stopMove.mutate(input)}
                   selectedStopId={selectedStopId}
                   onSelectStop={(id) => setItineraryModalStopId(id)}
                   compose={compose}

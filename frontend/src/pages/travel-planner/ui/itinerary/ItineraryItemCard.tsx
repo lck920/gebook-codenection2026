@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   GripVerticalIcon,
@@ -9,6 +9,7 @@ import {
 import { CategoryIcon, type Stop, type StopCategory } from "@/entities/stop";
 import type { Trip } from "@/entities/trip";
 import { cn, formatMoney, interactive } from "@/shared/lib";
+import type { ItineraryStopDragHandleProps } from "./useItineraryStopDrag";
 
 /**
  * Very light per-category tints. These sit *behind* body text, so they stay
@@ -73,6 +74,12 @@ export interface ItineraryItemCardProps {
   canEdit: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  /** When set, the grip becomes a drag handle for moving the stop between days. */
+  dragHandleProps?: ItineraryStopDragHandleProps;
+  /** This card is the one currently being dragged. */
+  dragging?: boolean;
+  /** Lift transform applied while dragging. */
+  style?: CSSProperties;
 }
 
 /**
@@ -91,6 +98,9 @@ export function ItineraryItemCard({
   canEdit,
   onSelect,
   onDelete,
+  dragHandleProps,
+  dragging = false,
+  style,
 }: ItineraryItemCardProps) {
   const { t } = useTranslation("planner");
   const isDrive = stop.transit || stop.category === "Transit";
@@ -99,7 +109,13 @@ export function ItineraryItemCard({
     : null;
 
   return (
-    <div className="group/item flex gap-2">
+    <div
+      className={cn(
+        "group/item flex gap-2",
+        dragging && "opacity-90 [&_*]:!cursor-grabbing",
+      )}
+      style={style}
+    >
       <div className="flex w-8 flex-none flex-col items-center">
         <span
           className={cn(
@@ -131,7 +147,21 @@ export function ItineraryItemCard({
               : "shadow-xs hover:shadow-md",
           )}
         >
-          {canEdit ? (
+          {canEdit && dragHandleProps ? (
+            <button
+              type="button"
+              {...dragHandleProps}
+              data-drag-handle=""
+              aria-label={t("detail.moveStop", { name: stop.name })}
+              className={cn(
+                "-my-1 -ml-1 flex flex-none touch-none items-start rounded-md px-0.5 py-1 text-muted-foreground/60",
+                "hover:bg-accent hover:text-foreground",
+                dragging ? "cursor-grabbing" : "cursor-grab",
+              )}
+            >
+              <GripVerticalIcon className="mt-0.5 size-4" aria-hidden="true" />
+            </button>
+          ) : canEdit ? (
             <GripVerticalIcon
               className="mt-0.5 size-4 flex-none text-muted-foreground/50"
               aria-hidden="true"

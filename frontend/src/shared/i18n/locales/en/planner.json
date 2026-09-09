@@ -94,7 +94,8 @@
     "linkLabelPlaceholder": "Label",
     "linkUrlPlaceholder": "https://…",
     "editStop": "Edit {{name}}",
-    "deleteStop": "Delete {{name}}"
+    "deleteStop": "Delete {{name}}",
+    "moveStop": "Drag to move {{name}} to another day"
   },
   "schedule": {
     "insert": "Insert stop",
