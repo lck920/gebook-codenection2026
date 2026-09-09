@@ -1,25 +1,28 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import { MapPinOffIcon, PlusIcon, SparklesIcon } from "lucide-react";
-import { dayDateLabel, type Trip } from "@/entities/trip";
+import type { Reservation } from "@/entities/reservation";
+import { formatDuration, parseDurationMinutes } from "@/entities/stop";
+import type { Trip } from "@/entities/trip";
+import { fetchReservations, type UpdateTripDayInput } from "@/shared/api";
+import { queryKeys } from "@/shared/config";
 import { Input } from "@/shared/ui/input";
-import { cn, formatMoney } from "@/shared/lib";
-import { DayPills } from "./DayPills";
+import { cn, interactive } from "@/shared/lib";
+import { DayCard } from "./itinerary/DayCard";
+import { ItineraryItemCard } from "./itinerary/ItineraryItemCard";
 import { PlaceSearch } from "./PlaceSearch";
-import { StopCard } from "./StopCard";
 import type { ComposeDraft } from "./ScheduleBoard";
 
 /**
- * The planner's middle column: one day at a time as a vertical timeline.
+ * The planner's middle column: the whole trip as a vertical stack of day cards.
  *
- * The wide multi-day board (`ScheduleBoard`) needs ~1200px and does not fit
- * beside the chat and the map, so this renders the selected day only — times
- * down the gutter, stops as cards, and an add affordance whether the day is
- * full or empty.
+ * Each day is its own elevated card that folds open and shut, so a long trip
+ * stays navigable inside a ~600px column without a separate day selector. The
+ * wide multi-day board (`ScheduleBoard`) needs ~1200px and cannot fit here.
  */
 export function ItineraryColumn({
   trip,
-  day,
   onDayChange,
   selectedStopId,
   onSelectStop,
@@ -33,10 +36,14 @@ export function ItineraryColumn({
   onPickOnMap,
   biasLat,
   biasLng,
+  onAddDay,
+  onUpdateDay,
+  onDeleteDay,
+  onReorderDays,
+  onDeleteStop,
 }: {
   trip: Trip;
-  /** 0 means "all days"; the column then shows every day in order. */
-  day: number;
+  /** Focuses the map on a day; the day cards drive this via their Map action. */
   onDayChange: (day: number) => void;
   selectedStopId: string | null;
   onSelectStop: (stopId: string) => void;
@@ -53,129 +60,167 @@ export function ItineraryColumn({
   /** Bias search results towards where the trip actually is. */
   biasLat?: number;
   biasLng?: number;
+  onAddDay: () => void;
+  onUpdateDay: (dayNumber: number, patch: UpdateTripDayInput) => void;
+  onDeleteDay: (dayNumber: number) => void;
+  onReorderDays: (order: number[]) => void;
+  onDeleteStop: (stopId: string) => void;
 }) {
-  const { t, i18n } = useTranslation("planner");
-  const locale = i18n.resolvedLanguage ?? "en";
+  const { t } = useTranslation("planner");
 
-  const days = day === 0 ? trip.days : trip.days.filter((d) => d.number === day);
-  // A brand-new trip repeated "Add a stop to day N" once per day — nine
-  // identical rows saying the same thing. One prompt for the whole trip says it
-  // better, and every day header still carries its own Add stop button.
+  // The board shows a ticket badge on stops that have a booking attached; the
+  // timeline rendered the same card without the count, so the badge could never
+  // appear on desktop. Same query key as the board, so they share one fetch.
+  const { data: reservations = [] } = useQuery<Reservation[]>({
+    queryKey: queryKeys.reservations(trip.id),
+    queryFn: () => fetchReservations(trip.id),
+  });
+  const reservationCountByStop = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const reservation of reservations) {
+      if (!reservation.stopId) continue;
+      counts.set(reservation.stopId, (counts.get(reservation.stopId) ?? 0) + 1);
+    }
+    return counts;
+  }, [reservations]);
+
+  // Collapsed days are tracked rather than expanded ones, so a day added later
+  // starts open instead of silently appearing shut.
+  const [collapsed, setCollapsed] = useState<ReadonlySet<number>>(new Set());
+  const toggleDay = (dayNumber: number) =>
+    setCollapsed((current) => {
+      const next = new Set(current);
+      if (next.has(dayNumber)) next.delete(dayNumber);
+      else next.add(dayNumber);
+      return next;
+    });
+
   const tripEmpty = trip.stops.length === 0;
+
+  const moveDay = (index: number, direction: -1 | 1) => {
+    const order = trip.days.map((d) => d.number);
+    const target = index + direction;
+    if (target < 0 || target >= order.length) return;
+    const current = order[index];
+    const swap = order[target];
+    if (current == null || swap == null) return;
+    order[index] = swap;
+    order[target] = current;
+    onReorderDays(order);
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-none border-b border-border px-4.5">
-        <DayPills trip={trip} day={day} onDayChange={onDayChange} />
-      </div>
-
-      <div className="scrollbar-reveal flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-4.5">
-        {tripEmpty && days.length > 0 ? (
+      <div className="scrollbar-reveal flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 sm:p-4.5">
+        {tripEmpty && trip.days.length > 0 ? (
           <EmptyTripPrompt
             canEdit={canEdit}
             onPlanWithAI={onPlanWithAI}
-            onAddStop={() => onOpenCompose(days[0]!.number, 0)}
+            onAddStop={() => onOpenCompose(trip.days[0]!.number, 0)}
           />
         ) : null}
-        {days.length === 0 ? (
-          <p className="m-auto text-sm text-muted-foreground">
-            {t("days.all")}
-          </p>
+
+        {trip.days.length === 0 ? (
+          <p className="m-auto text-sm text-muted-foreground">{t("days.all")}</p>
         ) : (
-          days.map((d) => {
+          trip.days.map((d, index) => {
             const stops = trip.stops
               .filter((s) => s.day === d.number)
               .sort((a, b) => a.time.localeCompare(b.time));
-            const planned = stops.reduce((sum, s) => sum + s.cost, 0);
             const composing = compose?.day === d.number;
+            const plannedCost = stops.reduce((sum, s) => sum + s.cost, 0);
+
+            // Drive time is the sum of the day's transit legs; a duration that
+            // cannot be parsed is skipped rather than counted as zero.
+            const driveMinutes = stops
+              .filter((s) => s.transit || s.category === "Transit")
+              .reduce(
+                (sum, s) => sum + (parseDurationMinutes(s.duration) ?? 0),
+                0,
+              );
+
+            // The rail badge numbers activities only — a transit leg shows its
+            // category icon instead, so counting it would make the visible
+            // sequence skip (icon, 2, 3 rather than icon, 1, 2).
+            let activityNumber = 0;
+            const railNumbers = stops.map((s) =>
+              s.transit || s.category === "Transit" ? 0 : ++activityNumber,
+            );
 
             return (
-              <section key={d.number} className="flex flex-col">
-                <div className="flex items-center gap-2.5">
-                  <div className="min-w-0">
-                    <p className="font-heading text-[15px] font-bold tracking-tight">
-                      {t("days.day", { n: d.number })}
-                      {d.city ? ` · ${d.city}` : ""}
-                    </p>
-                    <p className="mt-0.5 font-mono text-[10.5px] tracking-[0.06em] text-muted-foreground uppercase">
-                      {[
-                        dayDateLabel(trip, d, locale),
-                        `${stops.length} ${stops.length === 1 ? "stop" : "stops"}`,
-                        planned > 0
-                          ? `${formatMoney(planned, trip.currency)} planned`
-                          : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  </div>
-                  {canEdit ? (
-                    <button
-                      type="button"
-                      onClick={() => onOpenCompose(d.number, stops.length)}
-                      className="wf-interactive wf-pressable ml-auto inline-flex h-7.5 items-center gap-1.5 rounded-[10px] border border-border bg-card px-3 text-xs font-semibold hover:bg-accent"
-                    >
-                      <PlusIcon
-                        className="size-3.5 text-muted-foreground"
-                        aria-hidden="true"
-                      />
-                      {t("compose.add")}
-                    </button>
-                  ) : null}
-                </div>
-
-                <div className="mt-3 flex flex-col">
-                  {stops.map((stop, index) => (
-                    <TimelineRow
-                      key={stop.id}
-                      index={index + 1}
-                      time={stop.time}
-                      duration={stop.duration}
-                      last={index === stops.length - 1 && !composing}
-                    >
-                      <StopCard
-                        trip={trip}
-                        stop={stop}
-                        selected={stop.id === selectedStopId}
-                        onSelect={() => onSelectStop(stop.id)}
-                      />
-                    </TimelineRow>
-                  ))}
-
-                  {composing ? (
-                    <TimelineRow
-                      index={stops.length + 1}
-                      time={compose.time}
-                      last
-                    >
-                      <ComposeRow
-                        draft={compose}
-                        onChange={onChangeCompose}
-                        onConfirm={onConfirmCompose}
-                        onCancel={onCancelCompose}
-                        onPickOnMap={onPickOnMap}
-                        biasLat={biasLat}
-                        biasLng={biasLng}
-                      />
-                    </TimelineRow>
-                  ) : null}
-                </div>
-
-                {stops.length === 0 && !composing && !tripEmpty && day !== 0 ? (
-                  <button
-                    type="button"
-                    onClick={() => canEdit && onOpenCompose(d.number, 0)}
-                    disabled={!canEdit}
-                    className="wf-interactive wf-pressable mt-1 flex h-11 items-center justify-center gap-1.5 rounded-2xl border border-dashed border-border-strong text-[12.5px] font-semibold text-muted-foreground hover:border-brand hover:text-foreground disabled:opacity-50"
-                  >
-                    <PlusIcon className="size-3.5" aria-hidden="true" />
-                    {t("compose.addToDay", { n: d.number })}
-                  </button>
+              <DayCard
+                key={d.number}
+                trip={trip}
+                day={d}
+                position={index}
+                dayCount={trip.days.length}
+                stopCount={stops.length}
+                plannedCost={plannedCost}
+                driveTime={
+                  driveMinutes > 0 ? formatDuration(driveMinutes) : null
+                }
+                expanded={!collapsed.has(d.number)}
+                onToggle={() => toggleDay(d.number)}
+                canEdit={canEdit}
+                onAddItem={() => onOpenCompose(d.number, stops.length)}
+                onShowOnMap={() => onDayChange(d.number)}
+                onUpdateDay={(patch) => onUpdateDay(d.number, patch)}
+                onDelete={() => onDeleteDay(d.number)}
+                onMove={(direction) => moveDay(index, direction)}
+              >
+                {stops.length === 0 && !composing ? (
+                  <p className="px-1 py-2 text-xs text-muted-foreground">
+                    {t("days.emptyDay")}
+                  </p>
                 ) : null}
-              </section>
+
+                {stops.map((stop, stopIndex) => (
+                  <ItineraryItemCard
+                    key={stop.id}
+                    trip={trip}
+                    stop={stop}
+                    index={railNumbers[stopIndex] ?? stopIndex + 1}
+                    last={stopIndex === stops.length - 1 && !composing}
+                    selected={stop.id === selectedStopId}
+                    reservationCount={reservationCountByStop.get(stop.id) ?? 0}
+                    canEdit={canEdit}
+                    onSelect={() => onSelectStop(stop.id)}
+                    onDelete={() => onDeleteStop(stop.id)}
+                  />
+                ))}
+
+                {composing ? (
+                  <div className="ml-10">
+                    <ComposeRow
+                      draft={compose}
+                      onChange={onChangeCompose}
+                      onConfirm={onConfirmCompose}
+                      onCancel={onCancelCompose}
+                      onPickOnMap={onPickOnMap}
+                      biasLat={biasLat}
+                      biasLng={biasLng}
+                    />
+                  </div>
+                ) : null}
+              </DayCard>
             );
           })
         )}
+
+        {canEdit && trip.days.length > 0 ? (
+          <button
+            type="button"
+            onClick={onAddDay}
+            className={cn(
+              interactive,
+              "flex h-11 w-full flex-none items-center justify-center gap-1.5 rounded-2xl border border-dashed border-border-strong text-[12.5px] font-semibold text-muted-foreground",
+              "transition-all duration-200 hover:border-solid hover:border-brand hover:bg-brand-muted hover:text-foreground",
+            )}
+          >
+            <PlusIcon className="size-4" aria-hidden="true" />
+            {t("days.addDay")}
+          </button>
+        ) : null}
       </div>
     </div>
   );
@@ -223,41 +268,6 @@ function EmptyTripPrompt({
           </button>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-/** Time gutter + numbered node + connector, wrapping one timeline entry. */
-function TimelineRow({
-  index,
-  time,
-  duration,
-  last,
-  children,
-}: {
-  index: number;
-  time: string;
-  duration?: string;
-  last: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex gap-3">
-      <div className="w-11 flex-none pt-3.5 text-right">
-        <p className="font-mono text-xs font-semibold">{time || "--:--"}</p>
-        {duration ? (
-          <p className="mt-0.5 text-[10.5px] text-muted-foreground">
-            {duration}
-          </p>
-        ) : null}
-      </div>
-      <div className="flex w-5.5 flex-none flex-col items-center pt-4.5">
-        <span className="flex size-5.5 items-center justify-center rounded-full bg-foreground text-[10px] font-bold text-background">
-          {index}
-        </span>
-        {last ? null : <span className="w-0.5 flex-1 bg-border" />}
-      </div>
-      <div className="min-w-0 flex-1 pb-2.5">{children}</div>
     </div>
   );
 }

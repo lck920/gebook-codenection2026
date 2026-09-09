@@ -11,6 +11,7 @@ import {
   type MemberSnapshot,
   type StopCategory,
   type StopSnapshot,
+  type StopLinkSnapshot,
   type TripIntake,
   type TripStatus,
   type TripSnapshot,
@@ -76,6 +77,18 @@ export interface UpdateStopDraft {
   costCurrency?: string;
   /** Free-form note (Markdown, may embed image URLs). Empty string clears it. */
   note?: string;
+  /** Personal shortlist flag; independent of the group `votes`. */
+  mustSee?: boolean;
+  /** Ticked off while the trip is running. */
+  done?: boolean;
+  /** Replaces the whole link list. An empty array clears it. */
+  links?: StopLinkDraft[];
+}
+
+/** One saved reference on a stop. A blank label falls back to the host name. */
+export interface StopLinkDraft {
+  label: string;
+  url: string;
 }
 
 /** A planned cost that has no itinerary stop: flights, lodging, a rail pass. */
@@ -169,6 +182,20 @@ const DAY_COLORS = [
   "#8a5cc0",
   "#c06a3c",
 ];
+
+const MAX_STOP_LINKS = 20;
+
+/**
+ * Trims a submitted link list into what is safe to store: a url is required,
+ * a blank label is allowed (the UI falls back to the host name), and the list
+ * is capped so one stop cannot grow without bound.
+ */
+function normaliseStopLinks(links: readonly StopLinkSnapshot[]): StopLinkSnapshot[] {
+  return links
+    .map((link) => ({ label: link.label.trim(), url: link.url.trim() }))
+    .filter((link) => link.url.length > 0)
+    .slice(0, MAX_STOP_LINKS);
+}
 
 function dayColorFor(number: number): string {
   return DAY_COLORS[(number - 1) % DAY_COLORS.length]!;
@@ -445,6 +472,7 @@ export class Trip {
       ...s,
       id: `s${nonce}-${s.id}`,
       createdBy: remapMember(s.createdBy),
+      links: s.links.map((link) => ({ ...link })),
       votes: s.votes.map(remapMember),
       comments: s.comments.map((c) => ({
         ...c,
@@ -645,6 +673,9 @@ export class Trip {
       transit: false,
       order: 0,
       note: draft.note?.trim() ?? "",
+      mustSee: false,
+      done: false,
+      links: [],
       votes: [],
       comments: [],
     };
@@ -692,6 +723,9 @@ export class Trip {
     }
 
     if (draft.note !== undefined) stop.note = draft.note.trim();
+    if (draft.mustSee !== undefined) stop.mustSee = draft.mustSee;
+    if (draft.done !== undefined) stop.done = draft.done;
+    if (draft.links !== undefined) stop.links = normaliseStopLinks(draft.links);
 
     this.markChanged();
 

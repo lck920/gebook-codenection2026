@@ -144,6 +144,9 @@ CREATE TABLE IF NOT EXISTS `stops` (
   `note` TEXT NOT NULL,
   `sort_order` INT NOT NULL DEFAULT 0,
   `cost_currency` VARCHAR(16) NOT NULL DEFAULT '',
+  `must_see` TINYINT(1) NOT NULL DEFAULT 0,
+  `done` TINYINT(1) NOT NULL DEFAULT 0,
+  `links` TEXT NOT NULL,
   PRIMARY KEY (`id`),
   KEY `stops_trip_idx` (`trip_id`),
   CONSTRAINT `stops_trip_id_fkey` FOREIGN KEY (`trip_id`) REFERENCES `trips` (`id`) ON DELETE CASCADE

@@ -33,6 +33,18 @@ export interface Stop {
   transit: boolean;
   /** Free-form note in Markdown (may embed image URLs). */
   note: string;
+  /** Personal shortlist flag. Distinct from `votes`, which is group consensus. */
+  mustSee: boolean;
+  /** Ticked off while the trip is running. */
+  done: boolean;
+  /** Saved references — booking pages, menus, reviews. */
+  links: StopLink[];
   votes: string[];
   comments: StopComment[];
+}
+
+/** One saved reference on a stop. A blank label falls back to the host name. */
+export interface StopLink {
+  label: string;
+  url: string;
 }

@@ -1,6 +1,15 @@
-import type { Trip, TripSummary } from "@/entities/trip";
-import type { StopCategory } from "@/entities/stop";
+import { normalizeTrip, type Trip, type TripSummary } from "@/entities/trip";
+import type { StopCategory, StopLink } from "@/entities/stop";
 import { apiFetch } from "./client";
+
+/**
+ * Every endpoint that returns a whole trip funnels through here, so a payload
+ * that predates the `mustSee` / `done` / `links` stop fields is backfilled once
+ * at the boundary instead of crashing a component that reads them.
+ */
+export function tripFetch(path: string, init?: RequestInit): Promise<Trip> {
+  return apiFetch<Trip>(path, init).then(normalizeTrip);
+}
 
 export function fetchTrips(): Promise<TripSummary[]> {
   return apiFetch<TripSummary[]>("/api/trips");
@@ -18,14 +27,14 @@ export interface CreateTripInput {
 }
 
 export function createTrip(input: CreateTripInput): Promise<Trip> {
-  return apiFetch<Trip>("/api/trips", {
+  return tripFetch("/api/trips", {
     method: "POST",
     body: JSON.stringify(input),
   });
 }
 
 export function renameTrip(tripId: string, title: string): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}`, {
+  return tripFetch(`/api/trips/${tripId}`, {
     method: "PATCH",
     body: JSON.stringify({ title }),
   });
@@ -33,22 +42,22 @@ export function renameTrip(tripId: string, title: string): Promise<Trip> {
 
 /** Acknowledge that the member has sent the one-shot suggested agent prompt. */
 export function clearAgentSeedPending(tripId: string): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}`, {
+  return tripFetch(`/api/trips/${tripId}`, {
     method: "PATCH",
     body: JSON.stringify({ clearAgentSeedPending: true }),
   });
 }
 
 export function fetchTrip(id: string): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${id}`);
+  return tripFetch(`/api/trips/${id}`);
 }
 
 export function addTripDay(tripId: string): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/days`, { method: "POST" });
+  return tripFetch(`/api/trips/${tripId}/days`, { method: "POST" });
 }
 
 export function deleteTripDay(tripId: string, dayNumber: number): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/days/${dayNumber}`, {
+  return tripFetch(`/api/trips/${tripId}/days/${dayNumber}`, {
     method: "DELETE",
   });
 }
@@ -65,7 +74,7 @@ export function updateTripDay(
   dayNumber: number,
   input: UpdateTripDayInput,
 ): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/days/${dayNumber}`, {
+  return tripFetch(`/api/trips/${tripId}/days/${dayNumber}`, {
     method: "PATCH",
     body: JSON.stringify(input),
   });
@@ -76,7 +85,7 @@ export function reorderTripDays(
   tripId: string,
   order: number[],
 ): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/days/order`, {
+  return tripFetch(`/api/trips/${tripId}/days/order`, {
     method: "PUT",
     body: JSON.stringify({ order }),
   });
@@ -98,7 +107,7 @@ export interface InsertStopInput {
 }
 
 export function insertStop(tripId: string, input: InsertStopInput): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/stops`, {
+  return tripFetch(`/api/trips/${tripId}/stops`, {
     method: "POST",
     body: JSON.stringify(input),
   });
@@ -113,6 +122,10 @@ export interface UpdateStopInput {
   cost?: number;
   costCurrency?: string;
   note?: string;
+  mustSee?: boolean;
+  done?: boolean;
+  /** Replaces the whole list. Send `[]` to clear it. */
+  links?: StopLink[];
 }
 
 export function updateStop(
@@ -120,7 +133,7 @@ export function updateStop(
   stopId: string,
   input: UpdateStopInput,
 ): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/stops/${stopId}`, {
+  return tripFetch(`/api/trips/${tripId}/stops/${stopId}`, {
     method: "PATCH",
     body: JSON.stringify(input),
   });
@@ -134,7 +147,7 @@ export interface MoveStopInput {
 
 /** Remove a stop from the itinerary. Returns the trip without it. */
 export function deleteStop(tripId: string, stopId: string): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/stops/${stopId}`, {
+  return tripFetch(`/api/trips/${tripId}/stops/${stopId}`, {
     method: "DELETE",
   });
 }
@@ -144,14 +157,14 @@ export function moveStop(
   stopId: string,
   input: MoveStopInput,
 ): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/stops/${stopId}/position`, {
+  return tripFetch(`/api/trips/${tripId}/stops/${stopId}/position`, {
     method: "PUT",
     body: JSON.stringify(input),
   });
 }
 
 export function toggleVote(tripId: string, stopId: string): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/stops/${stopId}/vote`, {
+  return tripFetch(`/api/trips/${tripId}/stops/${stopId}/vote`, {
     method: "POST",
   });
 }
@@ -161,7 +174,7 @@ export function addComment(
   stopId: string,
   text: string,
 ): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/stops/${stopId}/comments`, {
+  return tripFetch(`/api/trips/${tripId}/stops/${stopId}/comments`, {
     method: "POST",
     body: JSON.stringify({ text }),
   });
@@ -177,7 +190,7 @@ export interface AddExpenseInput {
 }
 
 export function addExpense(tripId: string, input: AddExpenseInput): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/expenses`, {
+  return tripFetch(`/api/trips/${tripId}/expenses`, {
     method: "POST",
     body: JSON.stringify(input),
   });
@@ -188,7 +201,7 @@ export function updateExpense(
   expenseId: string,
   input: AddExpenseInput,
 ): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/expenses/${expenseId}`, {
+  return tripFetch(`/api/trips/${tripId}/expenses/${expenseId}`, {
     method: "PATCH",
     body: JSON.stringify(input),
   });
@@ -199,7 +212,7 @@ export function setTripStatus(
   tripId: string,
   status: "planning" | "active" | "settled",
 ): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/status`, {
+  return tripFetch(`/api/trips/${tripId}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
@@ -216,7 +229,7 @@ export function addBudgetItem(
   tripId: string,
   input: BudgetItemInput,
 ): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/budget-items`, {
+  return tripFetch(`/api/trips/${tripId}/budget-items`, {
     method: "POST",
     body: JSON.stringify(input),
   });
@@ -227,14 +240,14 @@ export function updateBudgetItem(
   itemId: string,
   input: BudgetItemInput,
 ): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/budget-items/${itemId}`, {
+  return tripFetch(`/api/trips/${tripId}/budget-items/${itemId}`, {
     method: "PATCH",
     body: JSON.stringify(input),
   });
 }
 
 export function removeBudgetItem(tripId: string, itemId: string): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/budget-items/${itemId}`, {
+  return tripFetch(`/api/trips/${tripId}/budget-items/${itemId}`, {
     method: "DELETE",
   });
 }
@@ -250,7 +263,7 @@ export function setBudgetContribution(
   tripId: string,
   input: SetContributionInput,
 ): Promise<Trip> {
-  return apiFetch<Trip>(`/api/trips/${tripId}/budget-contributions`, {
+  return tripFetch(`/api/trips/${tripId}/budget-contributions`, {
     method: "PUT",
     body: JSON.stringify(input),
   });

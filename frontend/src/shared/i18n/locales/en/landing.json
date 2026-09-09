@@ -8,7 +8,8 @@
     "subtitle": "AI-powered itineraries, kira-kira split bill, and instant re-planning when rain spoils your jalan-jalan. Steady, smart, and zero drama.",
     "primary": "Jom Start Planning",
     "secondary": "I already have an account",
-    "imageAlt": "Gebook interactive map and smart travel planner"
+    "imageAlt": "Gebook interactive map and smart travel planner",
+    "iconAlt": "Gebook"
   },
   "facts": {
     "label": "Featured escape",

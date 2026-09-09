@@ -189,6 +189,11 @@ model stops {
   note          String          @default("")
   sort_order    Int             @default(0)
   cost_currency String          @default("")
+  must_see      Boolean         @default(false)
+  done          Boolean         @default(false)
+  /// JSON array of {label,url}. Stored as text so the pg and mysql drivers
+  /// behave identically; the repository serialises it.
+  links         String          @default("[]")
   reservations  reservations[]
   stop_comments stop_comments[]
   stop_votes    stop_votes[]

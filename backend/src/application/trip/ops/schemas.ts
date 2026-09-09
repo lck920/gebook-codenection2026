@@ -93,6 +93,16 @@ export const moveStopToolSchema = z.object({
   index: z.number().int().min(0),
 });
 
+/** One saved reference on a stop. Only http(s) is accepted, so a stored link
+ *  can never smuggle a `javascript:` url into the client's anchor tags. */
+export const stopLinkSchema = z.object({
+  label: z.string().trim().max(120),
+  url: z.string().trim().url().max(2_000).refine(
+    (value) => /^https?:\/\//i.test(value),
+    { message: "Only http(s) links are allowed" },
+  ),
+});
+
 export const updateStopChangesSchema = z
   .object({
     name: z.string().trim().min(1).max(160),
@@ -103,6 +113,9 @@ export const updateStopChangesSchema = z
     cost: z.number().min(0).max(100_000_000),
     costCurrency: z.string().trim().min(1).max(8),
     note: z.string().max(20_000),
+    mustSee: z.boolean(),
+    done: z.boolean(),
+    links: z.array(stopLinkSchema).max(20),
   })
   .partial()
   .refine((value) => Object.keys(value).length > 0, {

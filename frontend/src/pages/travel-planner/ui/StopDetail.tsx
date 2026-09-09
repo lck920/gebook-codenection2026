@@ -1,13 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-import { BookOpenTextIcon, Maximize2, Trash2Icon } from "lucide-react";
+import {
+  BookOpenTextIcon,
+  CheckIcon,
+  LinkIcon,
+  Maximize2,
+  PlusIcon,
+  StarIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import type { Trip } from "@/entities/trip";
 import {
   CategoryIcon,
+  formatDuration,
+  parseDurationMinutes,
   type Stop,
   type StopCategory,
   type StopComment,
+  type StopLink,
 } from "@/entities/stop";
 import type { TripMember } from "@/entities/member";
 import type { UpdateStopInput } from "@/shared/api";
@@ -63,32 +74,8 @@ const CATEGORY_OPTIONS: StopCategory[] = [
   "Plan",
 ];
 
-/** Half-hourly time options, matching the schedule composer's picker. */
-const TIME_OPTIONS: string[] = Array.from({ length: 48 }, (_, i) => {
-  const hh = String(Math.floor(i / 2)).padStart(2, "0");
-  const mm = i % 2 ? "30" : "00";
-  return `${hh}:${mm}`;
-});
-
-const DURATION_OPTIONS = [
-  "0.5h",
-  "1h",
-  "1.5h",
-  "2h",
-  "2.5h",
-  "3h",
-  "4h",
-  "5h",
-  "6h",
-  "8h",
-];
-
-/** Keep a data value selectable even when it is not one of the presets. */
-function withCurrent(options: readonly string[], current: string): string[] {
-  return current && !options.includes(current)
-    ? [current, ...options]
-    : [...options];
-}
+/** Quick presets for the duration control, in minutes. */
+const DURATION_PRESETS = [15, 30, 45, 60, 90, 120, 180, 240];
 
 function memberOf(trip: Trip, id: string): TripMember {
   return trip.members.find((m) => m.id === id) ?? trip.members[0]!;
@@ -333,6 +320,275 @@ function InlineNote({
 }
 
 /** Popover editor for a stop's day, start time, and duration. */
+/**
+ * Must-See and Done. Deliberately separate from `votes`: votes are the group
+ * deciding what matters, these two are the trip's own state — one thing the
+ * planners want to keep in view, the other something already behind them.
+ */
+function StatusToggles({
+  stop,
+  canEdit,
+  onUpdateStop,
+}: {
+  stop: Stop;
+  canEdit: boolean;
+  onUpdateStop: (stopId: string, patch: UpdateStopInput) => void;
+}) {
+  const { t } = useTranslation("planner");
+  const toggles = [
+    {
+      key: "mustSee" as const,
+      active: stop.mustSee,
+      icon: <StarIcon className="size-3.5" aria-hidden="true" />,
+      label: t("detail.mustSee"),
+      activeClass: "bg-warning text-warning-foreground",
+    },
+    {
+      key: "done" as const,
+      active: stop.done,
+      icon: <CheckIcon className="size-3.5" aria-hidden="true" />,
+      label: t("detail.done"),
+      activeClass: "bg-success text-success-foreground",
+    },
+  ];
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {toggles.map((toggle) => (
+        <button
+          key={toggle.key}
+          type="button"
+          disabled={!canEdit}
+          aria-pressed={toggle.active}
+          onClick={() => onUpdateStop(stop.id, { [toggle.key]: !toggle.active })}
+          className={cn(
+            interactive,
+            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
+            toggle.active
+              ? toggle.activeClass
+              : "border border-border bg-card text-muted-foreground hover:text-foreground",
+            !canEdit && "pointer-events-none opacity-60",
+          )}
+        >
+          {toggle.icon}
+          {toggle.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Falls back to the host name when a link has no label of its own. */
+function linkLabel(link: StopLink): string {
+  if (link.label.trim()) return link.label;
+  try {
+    return new URL(link.url).host.replace(/^www\./, "");
+  } catch {
+    return link.url;
+  }
+}
+
+/**
+ * Saved references on a stop. The whole list is sent on every change because
+ * the API replaces it wholesale — simpler than per-row patching, and the list
+ * is capped at 20 server-side anyway.
+ */
+function LinksEditor({
+  stop,
+  canEdit,
+  onUpdateStop,
+}: {
+  stop: Stop;
+  canEdit: boolean;
+  onUpdateStop: (stopId: string, patch: UpdateStopInput) => void;
+}) {
+  const { t } = useTranslation("planner");
+  const [label, setLabel] = useState("");
+  const [url, setUrl] = useState("");
+
+  const commit = (links: StopLink[]) => onUpdateStop(stop.id, { links });
+
+  const add = () => {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    // The server only accepts http(s); assume https rather than rejecting a
+    // pasted "maps.google.com".
+    const normalised = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    commit([...stop.links, { label: label.trim(), url: normalised }]);
+    setLabel("");
+    setUrl("");
+  };
+
+  if (!canEdit && stop.links.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-2 rounded-xl bg-card p-3 shadow-[var(--shadow-border)]">
+      <h3 className="text-sm font-semibold text-muted-foreground">
+        {t("detail.links")}
+      </h3>
+
+      {stop.links.length ? (
+        <ul className="flex flex-col gap-1">
+          {stop.links.map((link, index) => (
+            <li key={`${link.url}-${index}`} className="flex items-center gap-1.5">
+              <LinkIcon
+                className="size-3.5 flex-none text-muted-foreground"
+                aria-hidden="true"
+              />
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="min-w-0 flex-1 truncate text-sm text-corn-600 underline underline-offset-2"
+              >
+                {linkLabel(link)}
+              </a>
+              {canEdit ? (
+                <button
+                  type="button"
+                  aria-label={t("detail.removeLink", { name: linkLabel(link) })}
+                  onClick={() =>
+                    commit(stop.links.filter((_, i) => i !== index))
+                  }
+                  className={cn(
+                    interactive,
+                    "flex size-6 flex-none items-center justify-center rounded-md text-muted-foreground hover:text-destructive",
+                  )}
+                >
+                  <Trash2Icon className="size-3.5" aria-hidden="true" />
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-muted-foreground">{t("detail.noLinks")}</p>
+      )}
+
+      {canEdit ? (
+        <form
+          className="flex items-center gap-1.5"
+          onSubmit={(event) => {
+            event.preventDefault();
+            add();
+          }}
+        >
+          <Input
+            value={label}
+            onChange={(event) => setLabel(event.target.value)}
+            placeholder={t("detail.linkLabelPlaceholder")}
+            aria-label={t("detail.linkLabelPlaceholder")}
+            className="w-28 flex-none rounded-lg"
+          />
+          <Input
+            type="url"
+            inputMode="url"
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+            placeholder={t("detail.linkUrlPlaceholder")}
+            aria-label={t("detail.linkUrlPlaceholder")}
+            className="min-w-0 flex-1 rounded-lg"
+          />
+          <Button
+            type="submit"
+            variant="secondary"
+            size="sm"
+            className="size-8 flex-none px-0"
+            disabled={!url.trim()}
+            aria-label={t("detail.addLink")}
+          >
+            <PlusIcon className="size-4" aria-hidden="true" />
+          </Button>
+        </form>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Duration as minutes, which is what people actually think in, converted back
+ * to the stored "1.5h" vocabulary on commit. Held in local state while typing
+ * so a half-typed "1" does not immediately save a 1-minute stop; it commits on
+ * blur and on Enter.
+ */
+function DurationInput({
+  stop,
+  onUpdateStop,
+}: {
+  stop: Stop;
+  onUpdateStop: (stopId: string, patch: UpdateStopInput) => void;
+}) {
+  const { t } = useTranslation("planner");
+  const stored = parseDurationMinutes(stop.duration);
+  const [draft, setDraft] = useState(stored == null ? "" : String(stored));
+
+  useEffect(() => {
+    const next = parseDurationMinutes(stop.duration);
+    setDraft(next == null ? "" : String(next));
+  }, [stop.duration]);
+
+  const commit = () => {
+    const minutes = Number(draft);
+    if (draft.trim() === "" || !Number.isFinite(minutes) || minutes <= 0) {
+      setDraft(stored == null ? "" : String(stored));
+      return;
+    }
+    const formatted = formatDuration(minutes);
+    if (formatted !== stop.duration) {
+      onUpdateStop(stop.id, { duration: formatted });
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1.5">
+        <Input
+          type="number"
+          min={5}
+          step={5}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              commit();
+            }
+          }}
+          className="rounded-lg tabular-nums"
+          aria-label={t("detail.durationLabel")}
+        />
+        <span className="text-xs text-muted-foreground">
+          {t("detail.durationUnit")}
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {DURATION_PRESETS.map((minutes) => (
+          <button
+            key={minutes}
+            type="button"
+            onClick={() => {
+              setDraft(String(minutes));
+              const formatted = formatDuration(minutes);
+              if (formatted !== stop.duration) {
+                onUpdateStop(stop.id, { duration: formatted });
+              }
+            }}
+            className={cn(
+              "wf-interactive rounded-md px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
+              stored === minutes
+                ? "bg-brand text-brand-foreground"
+                : "bg-muted text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {formatDuration(minutes)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ScheduleEditor({
   trip,
   stop,
@@ -347,9 +603,6 @@ function ScheduleEditor({
   onChangeStopDay: (stopId: string, day: number) => void;
 }) {
   const { t } = useTranslation("planner");
-  const timeItems = withCurrent(TIME_OPTIONS, stop.time);
-  const durationItems = withCurrent(DURATION_OPTIONS, stop.duration);
-
   return (
     <Popover>
       <PopoverTrigger
@@ -387,50 +640,22 @@ function ScheduleEditor({
           </Select>
         </EditorField>
         <EditorField label={t("detail.timeLabel")}>
-          <Select
-            items={timeItems.map((v) => ({ value: v, label: v }))}
-            value={stop.time || null}
-            onValueChange={(value) =>
-              value && onUpdateStop(stop.id, { time: String(value) })
-            }
-          >
-            <SelectTrigger
-              className="rounded-lg tabular-nums"
-              aria-label={t("detail.timeLabel")}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectPopup>
-              {timeItems.map((v) => (
-                <SelectItem key={v} value={v}>
-                  {v}
-                </SelectItem>
-              ))}
-            </SelectPopup>
-          </Select>
+          <Input
+            type="time"
+            // A stop can carry "—" for "no time yet", which is not a valid
+            // <input type="time"> value; show it as empty rather than letting
+            // the control silently reject it.
+            value={/^\d{2}:\d{2}$/.test(stop.time) ? stop.time : ""}
+            onChange={(event) => {
+              const next = event.target.value;
+              if (next) onUpdateStop(stop.id, { time: next });
+            }}
+            className="rounded-lg tabular-nums"
+            aria-label={t("detail.timeLabel")}
+          />
         </EditorField>
         <EditorField label={t("detail.durationLabel")}>
-          <Select
-            items={durationItems.map((v) => ({ value: v, label: v }))}
-            value={stop.duration || null}
-            onValueChange={(value) =>
-              value && onUpdateStop(stop.id, { duration: String(value) })
-            }
-          >
-            <SelectTrigger
-              className="rounded-lg tabular-nums"
-              aria-label={t("detail.durationLabel")}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectPopup>
-              {durationItems.map((v) => (
-                <SelectItem key={v} value={v}>
-                  {v}
-                </SelectItem>
-              ))}
-            </SelectPopup>
-          </Select>
+          <DurationInput stop={stop} onUpdateStop={onUpdateStop} />
         </EditorField>
       </PopoverPopup>
     </Popover>
@@ -835,6 +1060,10 @@ export function StopDetail({
             />
           </div>
         ) : null}
+
+        <StatusToggles stop={stop} canEdit={canEdit} onUpdateStop={onUpdateStop} />
+
+        <LinksEditor stop={stop} canEdit={canEdit} onUpdateStop={onUpdateStop} />
 
         <div className="flex flex-col gap-2 rounded-xl bg-card p-3 shadow-[var(--shadow-border)]">
           <div className="flex items-center justify-between gap-2">

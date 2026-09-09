@@ -20,7 +20,13 @@ const dialect = createDialect(provider);
 async function main() {
   console.log(`Seeding with provider=${provider}`);
 
-  for (const { snapshot: t, startLabel, endLabel, coverColor } of seedTrips()) {
+  for (const {
+    snapshot: t,
+    startLabel,
+    endLabel,
+    coverColor,
+    reservations,
+  } of seedTrips()) {
     const client = await db.connect();
     try {
       await client.query("BEGIN");
@@ -50,6 +56,9 @@ async function main() {
         t.ownerId,
       ]);
 
+      // Reservations reference stops and expenses, so they clear first or the
+      // foreign keys block the deletes below.
+      await client.query(`DELETE FROM reservations WHERE trip_id = $1`, [t.id]);
       await client.query(`DELETE FROM expenses WHERE trip_id = $1`, [t.id]);
       await client.query(`DELETE FROM stops WHERE trip_id = $1`, [t.id]);
       await client.query(`DELETE FROM trip_days WHERE trip_id = $1`, [t.id]);
@@ -89,8 +98,8 @@ async function main() {
       for (const [i, s] of t.stops.entries()) {
         await client.query(
           `INSERT INTO stops
-             (id, trip_id, day, time, duration, name, area, category, lat, lng, cost, cost_currency, created_by, transit, note, sort_order)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+             (id, trip_id, day, time, duration, name, area, category, lat, lng, cost, cost_currency, created_by, transit, note, sort_order, must_see, done, links)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
           [
             s.id,
             t.id,
@@ -108,6 +117,9 @@ async function main() {
             s.transit,
             s.note,
             i,
+            s.mustSee,
+            s.done,
+            JSON.stringify(s.links),
           ],
         );
         for (const memberId of s.votes) {
@@ -148,6 +160,42 @@ async function main() {
             [e.id, memberId],
           );
         }
+      }
+
+      // Last: reservations point at the stops and expenses inserted above.
+      for (const r of reservations) {
+        await client.query(
+          `INSERT INTO reservations
+             (id, trip_id, type, status, title, provider, confirmation_number,
+              start_at, end_at, timezone, location_name, address,
+              latitude, longitude, day_number, stop_id, expense_id,
+              amount_minor, currency, notes, created_by, idempotency_key)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)`,
+          [
+            r.id,
+            t.id,
+            r.type,
+            r.status,
+            r.title,
+            r.provider,
+            r.confirmation,
+            r.startAt,
+            r.endAt,
+            "Asia/Tokyo",
+            r.locationName,
+            "",
+            null,
+            null,
+            r.dayNumber,
+            r.stopId,
+            r.expenseId,
+            r.amountMinor,
+            r.amountMinor == null ? null : t.currency,
+            r.notes,
+            r.createdBy,
+            `seed-${r.id}`,
+          ],
+        );
       }
 
       await client.query("COMMIT");

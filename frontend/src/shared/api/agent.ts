@@ -1,5 +1,6 @@
 import type { Trip } from "@/entities/trip";
 import { apiFetch } from "./client";
+import { tripFetch } from "./trips";
 
 export type AgentMessageRole = "user" | "assistant" | "system";
 export type AgentMessageSource =
@@ -116,7 +117,7 @@ export function applyAgentSuggestion(
   tripId: string,
   suggestionId: string,
 ): Promise<Trip> {
-  return apiFetch<Trip>(
+  return tripFetch(
     `/api/trips/${tripId}/agent/suggestions/${suggestionId}/apply`,
     {
       method: "POST",

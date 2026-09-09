@@ -15,6 +15,43 @@ export interface SeedTrip {
   startLabel: string;
   endLabel: string;
   coverColor: string;
+  reservations: SeedReservation[];
+}
+
+/**
+ * Reservations are seeded from here rather than from `TripSnapshot`, which has
+ * no reservation field — they are loaded through their own repository, so the
+ * seed carries them alongside the snapshot instead of inside it.
+ *
+ * `stopId` and `expenseId` are the point of the demo data: a booking that hangs
+ * off a real stop shows the ticket badge on that stop's card, and one that
+ * points at an expense is what lets the Budget tab tell committed money from
+ * merely planned money. A null `dayNumber` lands in the "Unscheduled" bucket.
+ */
+export interface SeedReservation {
+  id: string;
+  type:
+    | "flight"
+    | "accommodation"
+    | "restaurant"
+    | "rail"
+    | "ground_transport"
+    | "activity"
+    | "other";
+  status: "tentative" | "confirmed" | "cancelled" | "completed";
+  title: string;
+  provider: string;
+  confirmation: string;
+  /** ISO 8601 with an explicit +09:00 offset — the trip is in Asia/Tokyo. */
+  startAt: string;
+  endAt: string | null;
+  locationName: string;
+  dayNumber: number | null;
+  stopId: string | null;
+  expenseId: string | null;
+  amountMinor: number | null;
+  notes: string;
+  createdBy: string;
 }
 
 const MEMBERS: SeedMemberDef[] = [
@@ -117,6 +154,88 @@ const RAW_EXPENSES: RawExpense[] = [
   { id: "e8", desc: "Pocket wifi + Suica top-ups", payer: "sam", amount: 9600, parts: ALL, when: "Pre-trip", cat: "Plan" },
 ];
 
+const RAW_RESERVATIONS: SeedReservation[] = [
+  {
+    id: "r1", type: "flight", status: "confirmed",
+    title: "NH 886 · KUL → HND", provider: "ANA", confirmation: "X7K2QP",
+    startAt: "2025-10-12T06:20:00+09:00", endAt: "2025-10-12T14:05:00+09:00",
+    locationName: "Kuala Lumpur Intl → Haneda T3",
+    dayNumber: 1, stopId: null, expenseId: null, amountMinor: 168000,
+    notes: "Four seats together, 23kg checked each.", createdBy: "lynn",
+  },
+  {
+    id: "r2", type: "accommodation", status: "confirmed",
+    title: "Shibuya Stream Excel · 2 nights", provider: "Tokyu Hotels",
+    confirmation: "SSE-4471",
+    startAt: "2025-10-12T15:00:00+09:00", endAt: "2025-10-14T11:00:00+09:00",
+    locationName: "Shibuya Stream, Shibuya",
+    dayNumber: 1, stopId: "s3b", expenseId: "e1", amountMinor: 84000,
+    notes: "Two twin rooms. Late check-in flagged on the booking.",
+    createdBy: "lynn",
+  },
+  {
+    id: "r3", type: "activity", status: "confirmed",
+    title: "teamLab Planets · 15:00 entry", provider: "teamLab",
+    confirmation: "TLP-88213",
+    startAt: "2025-10-12T15:00:00+09:00", endAt: "2025-10-12T17:30:00+09:00",
+    locationName: "Toyosu",
+    dayNumber: 1, stopId: "s3", expenseId: "e3", amountMinor: 11100,
+    notes: "Timed entry — the slot is not transferable.", createdBy: "aiko",
+  },
+  {
+    id: "r4", type: "rail", status: "confirmed",
+    title: "Nozomi 21 · Tokyo → Kyoto", provider: "JR Central",
+    confirmation: "JR-NZ21-4C",
+    startAt: "2025-10-14T08:24:00+09:00", endAt: "2025-10-14T10:39:00+09:00",
+    locationName: "Tokyo Sta. → Kyoto Sta.",
+    dayNumber: 3, stopId: "s10", expenseId: null, amountMinor: null,
+    notes: "Covered by the 7-day JR Pass. Reserved seats, car 8.",
+    createdBy: "lynn",
+  },
+  {
+    id: "r5", type: "accommodation", status: "confirmed",
+    title: "Gion machiya · 2 nights", provider: "Airbnb",
+    confirmation: "HMBK9Q2",
+    startAt: "2025-10-14T17:00:00+09:00", endAt: "2025-10-16T10:00:00+09:00",
+    locationName: "Higashiyama, Kyoto",
+    dayNumber: 3, stopId: "s12b", expenseId: "e6", amountMinor: 96000,
+    notes: "Self check-in, keypad code sent the morning of.", createdBy: "sam",
+  },
+  {
+    id: "r6", type: "restaurant", status: "tentative",
+    title: "Pontocho riverside kaiseki", provider: "Tabelog",
+    confirmation: "",
+    startAt: "2025-10-14T18:30:00+09:00", endAt: "2025-10-14T20:30:00+09:00",
+    locationName: "Pontocho Alley, Nakagyo",
+    dayNumber: 3, stopId: "s13", expenseId: "e7", amountMinor: 18400,
+    notes: "Holding four seats — confirm by Oct 10 or it releases.",
+    createdBy: "marco",
+  },
+  {
+    id: "r7", type: "flight", status: "tentative",
+    title: "D7 533 · KIX → KUL", provider: "AirAsia X",
+    confirmation: "D7-QK8823",
+    startAt: "2025-10-16T22:10:00+09:00", endAt: "2025-10-17T04:35:00+09:00",
+    locationName: "Kansai Intl → Kuala Lumpur Intl",
+    dayNumber: null, stopId: null, expenseId: null, amountMinor: 132000,
+    notes: "Seats not picked yet. Nobody has claimed the airport transfer.",
+    createdBy: "marco",
+  },
+];
+
+/** Stops the group starred, ticked off, and saved references for. */
+const MUST_SEE_STOPS = new Set(["s3", "s11", "s17", "s22"]);
+const DONE_STOPS = new Set(["s1", "s2", "s3"]);
+const STOP_LINKS: Record<string, { label: string; url: string }[]> = {
+  s3: [
+    { label: "Tickets", url: "https://www.teamlab.art/e/planets/" },
+    { label: "Getting there", url: "https://www.teamlab.art/e/planets/access/" },
+  ],
+  s11: [{ label: "Trail map", url: "https://inari.jp/en/" }],
+  s15: [{ label: "Opening hours", url: "https://www.shokoku-ji.jp/kinkakuji/" }],
+  s22: [{ label: "What to eat", url: "https://osaka-info.jp/en/spot/dotonbori/" }],
+};
+
 function buildJapan(): SeedTrip {
   const snapshot: TripSnapshot = {
     id: "japan-2025",
@@ -148,6 +267,11 @@ function buildJapan(): SeedTrip {
       transit: !!s.transit,
       order: i,
       note: "",
+      // A few flagged/ticked stops so the Must-See and Done affordances have
+      // something to render on a fresh database.
+      mustSee: MUST_SEE_STOPS.has(s.id),
+      done: DONE_STOPS.has(s.id),
+      links: STOP_LINKS[s.id] ?? [],
       votes: s.votes,
       comments: s.comments.map((c) => ({
         author: c.by,
@@ -174,6 +298,7 @@ function buildJapan(): SeedTrip {
     startLabel: "Oct 12",
     endLabel: "Oct 16",
     coverColor: "#3f6fc9",
+    reservations: RAW_RESERVATIONS,
   };
 }
 

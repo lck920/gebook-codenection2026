@@ -24,3 +24,4 @@ export {
   upsertTripSummary,
   type MoveTripStopInput,
 } from "./lib";
+export { normalizeTrip, normalizeStop } from "./normalize";
