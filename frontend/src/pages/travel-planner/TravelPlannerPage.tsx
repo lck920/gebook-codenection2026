@@ -46,6 +46,8 @@ import { MobileItinerarySheet } from "./ui/mobile/MobileItinerarySheet";
 import { MobilePlannerHeader } from "./ui/mobile/MobilePlannerHeader";
 import { MobileStopDetailSheet } from "./ui/mobile/MobileStopDetailSheet";
 import { StopInspector } from "./ui/StopInspector";
+import { StopDetailModal } from "./ui/StopDetailModal";
+import { StopEditModal } from "./ui/StopEditModal";
 import { buildPlanTripMessage } from "./lib/buildAgentSeedMessage";
 import { MobileTabBar } from "./ui/mobile/MobileTabBar";
 import { AgentChat } from "./ui/agent/AgentChat";
@@ -88,6 +90,9 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
   // and picking a pin on the map should not cover the list they were reading.
   const [selectionSource, setSelectionSource] =
     useState<StopSelectionSource>("map");
+  // Stop clicked from the left Schedule panel → opens the centered detail modal.
+  const [itineraryModalStopId, setItineraryModalStopId] = useState<string | null>(null);
+  const [editModalStopId, setEditModalStopId] = useState<string | null>(null);
   // "Plan with AI" fills the composer rather than sending: the member gets to
   // edit the ask before the agent starts drafting days. The counter re-offers
   // the same text after they clear it.
@@ -592,6 +597,12 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
   const selectedStop = selectedStopId
     ? trip.stops.find((s) => s.id === selectedStopId)
     : undefined;
+  const itineraryModalStop = itineraryModalStopId
+    ? trip.stops.find((s) => s.id === itineraryModalStopId) ?? null
+    : null;
+  const editModalStop = editModalStopId
+    ? trip.stops.find((s) => s.id === editModalStopId) ?? null
+    : null;
 
   // All four mode panes stay mounted so switching modes preserves each pane's
   // scroll position and keeps the MapLibre canvas alive; only the active pane
@@ -632,6 +643,7 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
             setDay(0);
             selectStop(id);
           }}
+          onDeleteStop={(id) => actions.stopDelete.mutate(id)}
           onAddDay={() => actions.day.mutate()}
           onUpdateDay={(dayNumber, patch) =>
             actions.dayUpdate.mutate({ dayNumber, patch })
@@ -797,11 +809,11 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
           />
 
           <PlannerColumns
-            minChat={390}
-            minItinerary={360}
-            minMap={420}
+            minChat={380}
+            minItinerary={340}
+            minMap={400}
             chat={
-              <div className="flex min-h-0 flex-1 flex-col border-r border-border">
+              <div className="flex min-h-0 flex-1 flex-col border-l border-border">
                 {agentEnabled ? (
                 <AgentChat
                   tripId={trip.id}
@@ -858,14 +870,20 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
               {middleTab === "schedule" ? (
                 <ItineraryColumn
                   trip={trip}
-                  day={day}
                   onDayChange={(d) => {
                     setDay(d);
                     setSelectedStopId(null);
                     setNoteEditingStopId(null);
                   }}
+                  onAddDay={() => actions.day.mutate()}
+                  onUpdateDay={(dayNumber, patch) =>
+                    actions.dayUpdate.mutate({ dayNumber, patch })
+                  }
+                  onDeleteDay={(dayNumber) => actions.dayDelete.mutate(dayNumber)}
+                  onReorderDays={(order) => actions.dayReorder.mutate(order)}
+                  onDeleteStop={removeStop}
                   selectedStopId={selectedStopId}
-                  onSelectStop={(id) => selectStop(id, "itinerary")}
+                  onSelectStop={(id) => setItineraryModalStopId(id)}
                   compose={compose}
                   onOpenCompose={openCompose}
                   onChangeCompose={patchCompose}
@@ -882,25 +900,6 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
                   {renderPanes(middleTab, false)}
                 </div>
               )}
-              {selectedStop &&
-              !noteEditingStop &&
-              selectionSource === "itinerary" ? (
-                <StopInspector
-                  trip={trip}
-                  stop={selectedStop}
-                  currentUserId={currentUserId}
-                  canEdit={trip.permissions.canEdit}
-                  onClose={() => setSelectedStopId(null)}
-                  onToggleVote={sidebarProps.onToggleVote}
-                  onComment={sidebarProps.onComment}
-                  commentPending={actions.comment.isPending}
-                  onUpdateStop={sidebarProps.onUpdateStop}
-                  onChangeStopDay={sidebarProps.onChangeStopDay}
-                  onExpandNote={openNoteEditor}
-                  onWriteTravelogue={sidebarProps.onWriteTravelogue}
-                  onDeleteStop={removeStop}
-                />
-              ) : null}
               </div>
             }
             map={
@@ -963,6 +962,50 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
         onOpenChange={setGroupPrefsOpen}
         tripTitle={trip.title}
         memberCount={trip.members.length}
+      />
+
+      {/* ── Itinerary schedule click → full-screen detail modal ───────────── */}
+      <StopDetailModal
+        trip={trip}
+        stop={itineraryModalStop}
+        open={itineraryModalStopId != null}
+        canEdit={trip.permissions.canEdit}
+        onClose={() => setItineraryModalStopId(null)}
+        onEdit={(id) => {
+          setItineraryModalStopId(null);
+          setEditModalStopId(id);
+        }}
+        onDelete={(id) => {
+          setItineraryModalStopId(null);
+          removeStop(id);
+        }}
+        onShowOnMap={(id) => {
+          setItineraryModalStopId(null);
+          setTab("map");
+          setDay(0);
+          selectStop(id, "map");
+        }}
+      />
+
+      {/* ── Full-screen edit modal ───────────── */}
+      <StopEditModal
+        trip={trip}
+        stop={editModalStop}
+        open={editModalStopId != null}
+        currentUserId={currentUserId}
+        canEdit={trip.permissions.canEdit}
+        commentPending={actions.comment.isPending}
+        onClose={() => setEditModalStopId(null)}
+        onToggleVote={sidebarProps.onToggleVote}
+        onComment={sidebarProps.onComment}
+        onUpdateStop={sidebarProps.onUpdateStop}
+        onChangeStopDay={sidebarProps.onChangeStopDay}
+        onExpandNote={openNoteEditor}
+        onWriteTravelogue={sidebarProps.onWriteTravelogue}
+        onDeleteStop={(id) => {
+          setEditModalStopId(null);
+          removeStop(id);
+        }}
       />
     </StreetViewViewerProvider>
   );

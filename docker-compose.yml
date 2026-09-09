@@ -1,0 +1,25 @@
+# Local Postgres for Gebook development.
+# Credentials and port match DATABASE_URL in .env:
+#   postgres://opentrip:opentrip@localhost:5430/opentrip
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gebook-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: opentrip
+      POSTGRES_PASSWORD: opentrip
+      POSTGRES_DB: opentrip
+    ports:
+      # Host 5430 keeps a default local Postgres on 5432 out of the way.
+      - "5430:5432"
+    volumes:
+      - gebook-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opentrip -d opentrip"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  gebook-pgdata:

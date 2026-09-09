@@ -6,11 +6,14 @@ import { cn } from "@/shared/lib";
 const STEP = 16;
 const JUMP = 64;
 
-const STORAGE_KEY = "gebook.planner_columns";
+// Bumped to v2 so stale {chat,map} values from the old layout don't conflict.
+const STORAGE_KEY = "gebook.planner_columns_v2";
 
 interface Widths {
+  /** Left fixed column — the schedule / itinerary panel. */
+  schedule: number;
+  /** Right fixed column — the AI co-planner chat. */
   chat: number;
-  map: number;
 }
 
 function readStored(fallback: Widths): Widths {
@@ -19,8 +22,12 @@ function readStored(fallback: Widths): Widths {
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as Partial<Widths>;
     return {
-      chat: Number.isFinite(parsed.chat) ? Number(parsed.chat) : fallback.chat,
-      map: Number.isFinite(parsed.map) ? Number(parsed.map) : fallback.map,
+      schedule: Number.isFinite(parsed.schedule)
+        ? Number(parsed.schedule)
+        : fallback.schedule,
+      chat: Number.isFinite(parsed.chat)
+        ? Number(parsed.chat)
+        : fallback.chat,
     };
   } catch {
     return fallback;
@@ -28,11 +35,11 @@ function readStored(fallback: Widths): Widths {
 }
 
 /**
- * The planner's three resizable columns: chat, itinerary, map.
+ * The planner's three resizable columns: schedule (left), map (center), chat (right).
  *
  * Widths are pixels rather than percentages because each column has a real
- * minimum — the chat needs room for the composer, the map for its controls —
- * and those should hold at any window size. The itinerary takes the remainder,
+ * minimum — the schedule needs room for day cards, the chat for the composer —
+ * and those should hold at any window size. The map takes the remainder,
  * so it is the column that grows when the window does.
  */
 export function PlannerColumns({
@@ -52,28 +59,28 @@ export function PlannerColumns({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [widths, setWidths] = useState<Widths>(() =>
-    readStored({ chat: minChat, map: minMap }),
+    readStored({ schedule: minItinerary, chat: minChat }),
   );
-  const [dragging, setDragging] = useState<"chat" | "map" | null>(null);
+  const [dragging, setDragging] = useState<"schedule" | "chat" | null>(null);
 
   /** Keep both columns within what the container can actually give them. */
   const clampWidths = useCallback(
     (next: Widths, available: number): Widths => {
+      const schedule = Math.max(
+        minItinerary,
+        Math.min(next.schedule, available - minChat - minMap),
+      );
       const chat = Math.max(
         minChat,
-        Math.min(next.chat, available - minMap - minItinerary),
+        Math.min(next.chat, available - schedule - minMap),
       );
-      const map = Math.max(
-        minMap,
-        Math.min(next.map, available - chat - minItinerary),
-      );
-      return { chat, map };
+      return { schedule, chat };
     },
     [minChat, minItinerary, minMap],
   );
 
   // Re-clamp on mount and whenever the window changes size, so a narrow window
-  // never squeezes the itinerary out of existence.
+  // never squeezes the map out of existence.
   useLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -92,7 +99,7 @@ export function PlannerColumns({
     }
   };
 
-  const resize = (which: "chat" | "map", delta: number) => {
+  const resize = (which: "schedule" | "chat", delta: number) => {
     const available = containerRef.current?.clientWidth ?? 0;
     setWidths((current) => {
       const next = clampWidths(
@@ -105,7 +112,7 @@ export function PlannerColumns({
   };
 
   function handlePointerDown(
-    which: "chat" | "map",
+    which: "schedule" | "chat",
     event: React.PointerEvent<HTMLDivElement>,
   ) {
     event.preventDefault();
@@ -116,8 +123,10 @@ export function PlannerColumns({
     event.currentTarget.setPointerCapture(event.pointerId);
 
     const move = (e: PointerEvent) => {
-      // The map grows leftwards, so its handle reads the drag inverted.
-      const delta = which === "chat" ? e.clientX - startX : startX - e.clientX;
+      // Schedule handle (right edge of left column) grows rightward: positive delta.
+      // Chat handle (left edge of right column) grows leftward: inverted delta.
+      const delta =
+        which === "schedule" ? e.clientX - startX : startX - e.clientX;
       setWidths((current) =>
         clampWidths({ ...current, [which]: startWidth + delta }, available),
       );
@@ -136,11 +145,11 @@ export function PlannerColumns({
   }
 
   function handleKeyDown(
-    which: "chat" | "map",
+    which: "schedule" | "chat",
     event: React.KeyboardEvent<HTMLDivElement>,
   ) {
-    const towardsStart = which === "chat" ? -STEP : STEP;
-    const towardsEnd = which === "chat" ? STEP : -STEP;
+    const towardsStart = which === "schedule" ? -STEP : STEP;
+    const towardsEnd = which === "schedule" ? STEP : -STEP;
     switch (event.key) {
       case "ArrowLeft":
         resize(which, towardsStart);
@@ -149,10 +158,10 @@ export function PlannerColumns({
         resize(which, towardsEnd);
         break;
       case "PageUp":
-        resize(which, which === "chat" ? -JUMP : JUMP);
+        resize(which, which === "schedule" ? -JUMP : JUMP);
         break;
       case "PageDown":
-        resize(which, which === "chat" ? JUMP : -JUMP);
+        resize(which, which === "schedule" ? JUMP : -JUMP);
         break;
       default:
         return;
@@ -172,16 +181,35 @@ export function PlannerColumns({
     <div
       ref={containerRef}
       className="flex min-h-0 flex-1"
-      style={{
-        gridTemplateColumns: `${widths.chat}px 1fr ${widths.map}px`,
-      }}
     >
+      {/* ── Left: Schedule / Itinerary ───────────────────────────────── */}
       <section
-        id="planner-chat"
-        style={{ width: widths.chat }}
+        id="planner-schedule"
+        style={{ width: widths.schedule }}
         className="flex min-h-0 min-w-0 flex-none flex-col overflow-hidden"
       >
-        {chat}
+        {itinerary}
+      </section>
+
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize the schedule column"
+        aria-controls="planner-schedule"
+        aria-valuenow={Math.round(widths.schedule)}
+        aria-valuemin={minItinerary}
+        tabIndex={0}
+        onPointerDown={(event) => handlePointerDown("schedule", event)}
+        onKeyDown={(event) => handleKeyDown("schedule", event)}
+        className={handleClass(dragging === "schedule")}
+      />
+
+      {/* ── Center: Map (flexible — fills remaining space) ───────────── */}
+      <section
+        id="planner-map"
+        className="relative min-h-0 min-w-0 flex-1 overflow-hidden"
+      >
+        {map}
       </section>
 
       <div
@@ -197,29 +225,13 @@ export function PlannerColumns({
         className={handleClass(dragging === "chat")}
       />
 
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        {itinerary}
-      </section>
-
-      <div
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Resize the map column"
-        aria-controls="planner-map"
-        aria-valuenow={Math.round(widths.map)}
-        aria-valuemin={minMap}
-        tabIndex={0}
-        onPointerDown={(event) => handlePointerDown("map", event)}
-        onKeyDown={(event) => handleKeyDown("map", event)}
-        className={handleClass(dragging === "map")}
-      />
-
+      {/* ── Right: AI Co-planner Chat ─────────────────────────────────── */}
       <section
-        id="planner-map"
-        style={{ width: widths.map }}
-        className="relative min-h-0 min-w-0 flex-none overflow-hidden"
+        id="planner-chat"
+        style={{ width: widths.chat }}
+        className="flex min-h-0 min-w-0 flex-none flex-col overflow-hidden"
       >
-        {map}
+        {chat}
       </section>
     </div>
   );

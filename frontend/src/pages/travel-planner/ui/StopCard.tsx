@@ -10,7 +10,7 @@ import { CategoryIcon, type Stop } from "@/entities/stop";
 import { useWeather } from "@/features/weather";
 import { cn, formatMoney } from "@/shared/lib";
 import { WeatherIcon } from "@/shared/ui/weather-icon";
-import { TicketCheck } from "lucide-react";
+import { CheckIcon, StarIcon, TicketCheck } from "lucide-react";
 
 export interface StopCardDragHandleProps {
   onPointerDown: (e: ReactPointerEvent<HTMLElement>) => void;
@@ -100,9 +100,26 @@ export function StopCard({
       </div>
       <div className="flex items-center gap-1.5">
         <CategoryIcon category={stop.category} />
-        <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-pretty">
+        <span
+          className={cn(
+            "min-w-0 flex-1 text-sm font-medium leading-snug text-pretty",
+            stop.done && "text-muted-foreground line-through",
+          )}
+        >
           {stop.name}
         </span>
+        {stop.mustSee ? (
+          <StarIcon
+            className="size-3.5 flex-none fill-current text-warning"
+            aria-label={t("detail.mustSee")}
+          />
+        ) : null}
+        {stop.done ? (
+          <CheckIcon
+            className="size-3.5 flex-none text-success"
+            aria-label={t("detail.done")}
+          />
+        ) : null}
       </div>
       <span className="pl-7 text-xs text-muted-foreground text-pretty tabular-nums">
         {meta}

@@ -35,6 +35,9 @@ export interface TripDto {
     createdBy: string;
     transit: boolean;
     note: string;
+    mustSee: boolean;
+    done: boolean;
+    links: { label: string; url: string }[];
     votes: string[];
     comments: { author: string; timeLabel: string; text: string }[];
   }>;
@@ -103,6 +106,9 @@ export function toTripDto(trip: Trip, currentUserId: string): TripDto {
       createdBy: st.createdBy,
       transit: st.transit,
       note: st.note,
+      mustSee: st.mustSee,
+      done: st.done,
+      links: st.links,
       votes: st.votes,
       comments: st.comments,
     })),

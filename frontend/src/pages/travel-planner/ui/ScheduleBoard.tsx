@@ -75,6 +75,7 @@ import {
 import { PlaceSearch } from "./PlaceSearch";
 import { StopCard, type StopCardDragHandleProps } from "./StopCard";
 import { DayWeatherIcon } from "@/features/weather";
+import { StopDetailModal } from "./StopDetailModal";
 
 const CATEGORY_OPTIONS = STOP_CATEGORIES;
 
@@ -134,6 +135,8 @@ interface ScheduleBoardProps {
   onCancel: () => void;
   onPickOnMap: () => void;
   onSelectStop: (id: string) => void;
+  /** Delete a stop from inside the item detail modal. */
+  onDeleteStop: (stopId: string) => void;
   /** Append a new empty day to the itinerary. */
   onAddDay: () => void;
   /** Update display metadata for an itinerary day. */
@@ -161,6 +164,7 @@ export function ScheduleBoard({
   onCancel,
   onPickOnMap,
   onSelectStop,
+  onDeleteStop,
   onAddDay,
   onUpdateDay,
   onDeleteDay,
@@ -206,6 +210,10 @@ export function ScheduleBoard({
     ? inferDayLocation(editingDayStops)
     : "";
   const locationOptions = buildLocationOptions(trip);
+
+  // ── Item Detail Modal ──────────────────────────────────────────────────────
+  const [selectedModalStopId, setSelectedModalStopId] = useState<string | null>(null);
+  const selectedModalStop = trip.stops.find((s) => s.id === selectedModalStopId) ?? null;
 
   const insertSlot = (day: number, index: number) =>
     compose?.day === day && compose.index === index ? (
@@ -311,11 +319,12 @@ export function ScheduleBoard({
                     <StopCard
                       trip={trip}
                       stop={s}
+                      selected={selectedModalStopId === s.id}
                       reservationCount={reservationCountByStop.get(s.id) ?? 0}
                       dragging={stopDrag.draggedStopId === s.id}
                       dragHandleProps={stopDrag.handleProps(s.id, d.number)}
                       style={stopDrag.stopStyle(s.id)}
-                      onSelect={onSelectStop}
+                      onSelect={(id) => setSelectedModalStopId(id)}
                     />
                     {insertSlot(d.number, idx + 1)}
                   </div>
@@ -380,6 +389,27 @@ export function ScheduleBoard({
         onConfirm={(dayNumber) => {
           onDeleteDay(dayNumber);
           setDeleteDialogDayNumber(null);
+        }}
+      />
+
+      {/* ── Itinerary Item Detail Modal ──────────────────────────────────── */}
+      <StopDetailModal
+        trip={trip}
+        stop={selectedModalStop}
+        open={selectedModalStopId != null}
+        canEdit={trip.permissions.canEdit}
+        onClose={() => setSelectedModalStopId(null)}
+        onEdit={(id) => {
+          setSelectedModalStopId(null);
+          onSelectStop(id);
+        }}
+        onDelete={(id) => {
+          setSelectedModalStopId(null);
+          onDeleteStop(id);
+        }}
+        onShowOnMap={(id) => {
+          setSelectedModalStopId(null);
+          onSelectStop(id);
         }}
       />
     </div>

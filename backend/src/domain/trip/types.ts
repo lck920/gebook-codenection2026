@@ -75,8 +75,19 @@ export interface StopSnapshot {
   order: number;
   /** Free-form note in Markdown (may embed image URLs). Empty string if none. */
   note: string;
+  /** Personal shortlist flag. Distinct from `votes`, which is group consensus. */
+  mustSee: boolean;
+  /** Ticked off while the trip is running. */
+  done: boolean;
+  /** Saved references — booking pages, menus, reviews. */
+  links: StopLinkSnapshot[];
   votes: string[];
   comments: CommentSnapshot[];
+}
+
+export interface StopLinkSnapshot {
+  label: string;
+  url: string;
 }
 
 export interface ExpenseSnapshot {

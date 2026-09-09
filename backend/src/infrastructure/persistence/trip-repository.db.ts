@@ -3,6 +3,7 @@ import type {
   ExpenseSnapshot,
   MemberSnapshot,
   StopSnapshot,
+  StopLinkSnapshot,
   TripIntake,
   TripRepository,
   TripSnapshot,
@@ -201,7 +202,7 @@ export class SqlTripRepository implements TripRepository {
           [id],
         ),
         this.db.query(
-          `SELECT id, day, time, duration, name, area, category, lat, lng, cost, cost_currency, created_by, transit, note, sort_order
+          `SELECT id, day, time, duration, name, area, category, lat, lng, cost, cost_currency, created_by, transit, note, sort_order, must_see, done, links
            FROM stops WHERE trip_id = $1 ORDER BY sort_order ASC`,
           [id],
         ),
@@ -278,6 +279,9 @@ export class SqlTripRepository implements TripRepository {
         transit: boolean | number;
         note: string | null;
         sort_order: number;
+        must_see: boolean | number | null;
+        done: boolean | number | null;
+        links: string | null;
       }>
     ).map((s) => ({
       id: s.id,
@@ -295,6 +299,9 @@ export class SqlTripRepository implements TripRepository {
       transit: Boolean(s.transit),
       order: s.sort_order,
       note: s.note ?? "",
+      mustSee: Boolean(s.must_see),
+      done: Boolean(s.done),
+      links: parseStopLinks(s.links),
       votes: votesByStop.get(s.id) ?? [],
       comments: commentsByStop.get(s.id) ?? [],
     }));
@@ -773,6 +780,27 @@ async function bulkInsert(
   }
 }
 
+/**
+ * `links` is a text column holding a JSON array, so the pg and mysql drivers
+ * round-trip it identically. Anything unparseable degrades to an empty list
+ * rather than failing the whole trip load.
+ */
+function parseStopLinks(raw: string | null): StopLinkSnapshot[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap((entry) => {
+      if (typeof entry !== "object" || entry === null) return [];
+      const { label, url } = entry as Record<string, unknown>;
+      if (typeof url !== "string" || url.length === 0) return [];
+      return [{ label: typeof label === "string" ? label : "", url }];
+    });
+  } catch {
+    return [];
+  }
+}
+
 async function insertStops(
   client: SqlConnection,
   tripId: string,
@@ -798,6 +826,9 @@ async function insertStops(
       "transit",
       "note",
       "sort_order",
+      "must_see",
+      "done",
+      "links",
     ],
     stops.map((st) => [
       st.id,
@@ -816,6 +847,9 @@ async function insertStops(
       st.transit,
       st.note,
       st.order,
+      st.mustSee,
+      st.done,
+      JSON.stringify(st.links ?? []),
     ]),
   );
 
