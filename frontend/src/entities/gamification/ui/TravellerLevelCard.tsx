@@ -118,6 +118,16 @@ export function TravellerLevelCard({
         </div>
       </div>
 
+      {onExplore && (
+        <button
+          type="button"
+          onClick={onExplore}
+          className="wf-tactile-btn mt-4 w-full rounded-2xl bg-brand py-2.5 text-xs font-bold text-white shadow-sm hover:bg-brand/90"
+        >
+          Plan a new trip →
+        </button>
+      )}
+
       {/* Badges Drawer / Expandable View */}
       {showBadges && (
         <div className="mt-4 border-t border-border/60 pt-4 wf-enter">

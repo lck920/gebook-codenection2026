@@ -29,7 +29,7 @@ export function calculateTravellerStats(tripsCount: number): TravellerStats {
   let level = 1;
   let title: string = TRAVELLER_LEVEL_TITLES[0];
   let tripsToNext = 1;
-  let xp = tripsCount * 350 + 120;
+  const xp = tripsCount * 350 + 120;
   let nextLevelXp = 500;
 
   if (tripsCount >= 8) {

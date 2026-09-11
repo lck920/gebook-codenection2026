@@ -19,7 +19,6 @@ import { CurrencySelect } from "@/features/set-default-currency";
 import { useSettings, type SettingsPane } from "@/features/settings";
 import { ThemeModeSelect } from "@/features/toggle-theme";
 import { config } from "@/shared/config";
-import { LanguageSwitch } from "@/shared/i18n/LanguageSwitch";
 import { cn, interactive, VISUAL_VIEWPORT_FIXED_CLASS } from "@/shared/lib";
 import {
   Dialog,

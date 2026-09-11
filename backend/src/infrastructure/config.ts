@@ -252,8 +252,13 @@ export function loadConfig(env: RawEnv, connectionString?: string): AppConfig {
         env.STORAGE_PUBLIC_URL?.trim() ||
         `${baseUrl.replace(/\/$/, "")}/api/uploads`;
 
-    const googleClientId = env.GOOGLE_CLIENT_ID?.trim();
-    const googleClientSecret = env.GOOGLE_CLIENT_SECRET?.trim();
+    const googleOAuth = parseOptionalCredentialPair(
+        env.GOOGLE_CLIENT_ID,
+        env.GOOGLE_CLIENT_SECRET,
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        (clientId, clientSecret) => ({ clientId, clientSecret }),
+    );
 
     return {
         databaseProvider,
@@ -266,10 +271,7 @@ export function loadConfig(env: RawEnv, connectionString?: string): AppConfig {
             .map((origin) => origin.trim())
             .filter(Boolean),
         storage: loadStorageConfig(env, publicUrl),
-        googleOAuth:
-            googleClientId && googleClientSecret
-                ? { clientId: googleClientId, clientSecret: googleClientSecret }
-                : null,
+        googleOAuth,
         captcha: parseCaptchaConfig(env),
         email: parseEmailConfig(env),
         openWeatherMapApiKey:

@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/shared/ui/dialog";
-import { Badge } from "@/shared/ui/badge";
 import { toastManager } from "@/shared/ui/toast";
 import { cn, VISUAL_VIEWPORT_FIXED_CLASS } from "@/shared/lib";
 
@@ -112,7 +111,7 @@ export function GroupPreferencesModal({
                   Group Preferences & Consensus
                 </DialogTitle>
                 <DialogDescription className="text-xs">
-                  Sync preferences across {memberCount} members to harmonize budget and itinerary pace.
+                  Sync preferences for {tripTitle} across {memberCount} members to harmonize budget and itinerary pace.
                 </DialogDescription>
               </div>
             </div>
@@ -152,15 +151,17 @@ export function GroupPreferencesModal({
                 Your Budget Comfort Range
               </label>
               <div className="mt-1.5 grid grid-cols-3 gap-2">
-                {[
-                  { key: "economy", label: "Budget-Friendly", desc: "Hostels & street eats" },
-                  { key: "balanced", label: "Balanced", desc: "3-4★ hotels & casual spots" },
-                  { key: "luxury", label: "Premium / Luxury", desc: "Top stays & fine dining" },
-                ].map((b) => (
+                {(
+                  [
+                    { key: "economy", label: "Budget-Friendly", desc: "Hostels & street eats" },
+                    { key: "balanced", label: "Balanced", desc: "3-4★ hotels & casual spots" },
+                    { key: "luxury", label: "Premium / Luxury", desc: "Top stays & fine dining" },
+                  ] as const
+                ).map((b) => (
                   <button
                     key={b.key}
                     type="button"
-                    onClick={() => setMyBudget(b.key as any)}
+                    onClick={() => setMyBudget(b.key)}
                     className={`rounded-2xl border p-2.5 text-left transition-all ${
                       myBudget === b.key
                         ? "border-brand bg-brand-ice/40 font-bold text-brand ring-2 ring-brand/30 dark:bg-brand-midnight"
@@ -180,15 +181,17 @@ export function GroupPreferencesModal({
                 Preferred Travel Pace
               </label>
               <div className="mt-1.5 grid grid-cols-3 gap-2">
-                {[
-                  { key: "chill", label: "Relaxed ☕", desc: "1-2 stops/day" },
-                  { key: "moderate", label: "Moderate 🚶", desc: "3-4 stops/day" },
-                  { key: "fast", label: "Action-Packed ⚡", desc: "5+ stops/day" },
-                ].map((p) => (
+                {(
+                  [
+                    { key: "chill", label: "Relaxed ☕", desc: "1-2 stops/day" },
+                    { key: "moderate", label: "Moderate 🚶", desc: "3-4 stops/day" },
+                    { key: "fast", label: "Action-Packed ⚡", desc: "5+ stops/day" },
+                  ] as const
+                ).map((p) => (
                   <button
                     key={p.key}
                     type="button"
-                    onClick={() => setMyPace(p.key as any)}
+                    onClick={() => setMyPace(p.key)}
                     className={`rounded-2xl border p-2 text-center transition-all ${
                       myPace === p.key
                         ? "border-brand bg-brand-ice/40 font-bold text-brand ring-2 ring-brand/30 dark:bg-brand-midnight"

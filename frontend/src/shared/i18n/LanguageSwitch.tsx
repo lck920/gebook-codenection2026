@@ -1,4 +1,4 @@
 /** Language is fixed to English. Component renders nothing. */
-export function LanguageSwitch(_props: { className?: string }): null {
+export function LanguageSwitch(): null {
   return null;
 }

@@ -688,6 +688,17 @@ export function AuthForm({ mode: externalMode, onModeChange }: AuthFormProps) {
         {isSignUp ? "CREATE ACCOUNT" : "LOG IN"}
       </Button>
 
+      {/* Mode toggle — the only way to switch modes when AuthForm is used
+          uncontrolled (e.g. embedded in the invite flow with no parent
+          header toggle). */}
+      <button
+        type="button"
+        onClick={() => setMode(isSignUp ? "signIn" : "signUp")}
+        className="text-center text-xs font-bold tracking-wider text-muted-foreground uppercase transition-colors hover:text-foreground"
+      >
+        {isSignUp ? "Already have an account? Log in" : "Don't have an account? Sign up"}
+      </button>
+
       {/* Terms and Privacy Policy Note */}
       <p className="mt-4 text-center text-[11px] leading-relaxed text-muted-foreground">
         By signing in to Gebook, you agree to our{" "}

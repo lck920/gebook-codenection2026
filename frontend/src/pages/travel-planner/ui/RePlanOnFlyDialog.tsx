@@ -124,7 +124,7 @@ export function RePlanOnFlyDialog({
                   Re-Plan on the Fly
                 </DialogTitle>
                 <DialogDescription className="text-xs">
-                  Things changed unexpectedly? Let Gebook AI instantly restructure your plan in seconds.
+                  Things changed unexpectedly on {tripTitle}? Let Gebook AI instantly restructure your plan in seconds.
                 </DialogDescription>
               </div>
             </div>
