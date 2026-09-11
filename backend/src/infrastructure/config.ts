@@ -15,7 +15,7 @@ export type EmailProviderName = "console" | "resend";
 /** Transactional email (OTP, etc.). Defaults to `console` for local dev. */
 export interface EmailConfig {
     provider: EmailProviderName;
-    /** From address, e.g. `OpenTrip <noreply@opentrip.im>`. */
+    /** From address, e.g. `Gebook <noreply@gebook.im>`. */
     from: string;
     /** Required when provider is `resend`. */
     resendApiKey: string | undefined;
@@ -326,7 +326,7 @@ function parseGeoConfig(env: RawEnv): GeoConfig {
 
     const userAgent =
         env.GEO_OSM_USER_AGENT?.trim() ||
-        "OpenTrip/0.1 (https://github.com/stvlynn/OpenTrip; geo-agent)";
+        "Gebook/0.1 (https://github.com/lck920/gebook-codenection2026; geo-agent)";
 
     return {
         provider,
@@ -353,7 +353,7 @@ function parseGeoConfig(env: RawEnv): GeoConfig {
 }
 
 const EMAIL_PROVIDERS: EmailProviderName[] = ["console", "resend"];
-const DEFAULT_EMAIL_FROM = "OpenTrip <noreply@localhost>";
+const DEFAULT_EMAIL_FROM = "Gebook <noreply@localhost>";
 
 /** Email provider selection. Defaults to console logging for local/dev. */
 function parseEmailConfig(env: RawEnv): EmailConfig {
@@ -383,7 +383,7 @@ function parseEmailConfig(env: RawEnv): EmailConfig {
 
 const DEFAULT_LODGING_TIMEOUT_MS = 30_000;
 const DEFAULT_LODGING_GEOCODE_UA =
-    "OpenTrip/0.1 (https://github.com/stvlynn/OpenTrip; lodging-geocode)";
+    "Gebook/0.1 (https://github.com/lck920/gebook-codenection2026; lodging-geocode)";
 
 /** Airbnb lodging scrape options. Always available; no API key required. */
 function parseLodgingConfig(env: RawEnv): LodgingConfig {

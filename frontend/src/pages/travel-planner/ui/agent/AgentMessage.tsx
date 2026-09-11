@@ -24,12 +24,12 @@ import { AgentAvatar } from "./AgentAvatar";
 import { AgentGeneratedUi } from "./AgentGeneratedUi";
 import { AgentGeneratedFallback } from "./AgentGeneratedFallback";
 import { toolDisplayName } from "./toolDisplayName";
-import { isAgentStatusPart } from "@opentrip/agent-ui-catalog";
+import { isAgentStatusPart } from "@gebook/agent-ui-catalog";
 import type { AgentUIMessage } from "../../model/agent-ui-message";
 import {
   fingerprintMessageText,
   textFromMessageParts,
-} from "@opentrip/observability-contract";
+} from "@gebook/observability-contract";
 
 /** AI SDK UI recommends Streamdown for incomplete streaming Markdown. */
 function AgentMarkdown({

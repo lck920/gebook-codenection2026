@@ -342,7 +342,7 @@ export class StreetViewGroundingService {
       let placeLabel: string;
       if (request.kind === "place") {
         const places = await this.observability.startSpan(
-          "opentrip.provider.geo.place_search",
+          "gebook.provider.geo.place_search",
           {
             provider: "geo",
             providerOperation: "place_search",
@@ -359,9 +359,9 @@ export class StreetViewGroundingService {
               lang: request.language,
               near: input.near,
             });
-            span.setAttribute("opentrip.provider.result_count", result.length);
+            span.setAttribute("gebook.provider.result_count", result.length);
             span.setAttribute(
-              "opentrip.provider.duration_ms",
+              "gebook.provider.duration_ms",
               Date.now() - startedAt,
             );
             return result;
@@ -388,7 +388,7 @@ export class StreetViewGroundingService {
 
       const startedAt = Date.now();
       const result = await this.observability.startSpan(
-        "opentrip.provider.street_view.search",
+        "gebook.provider.street_view.search",
         {
           provider: "street_view",
           providerOperation: "search",
@@ -408,13 +408,13 @@ export class StreetViewGroundingService {
             limit: STREET_VIEW_RESULT_LIMIT,
             observability: input.observability,
           });
-          span.setAttribute("opentrip.provider.outcome", value.outcome);
+          span.setAttribute("gebook.provider.outcome", value.outcome);
           span.setAttribute(
-            "opentrip.provider.result_count",
+            "gebook.provider.result_count",
             value.images.length,
           );
           span.setAttribute(
-            "opentrip.provider.duration_ms",
+            "gebook.provider.duration_ms",
             Date.now() - providerStartedAt,
           );
           return value;

@@ -4,8 +4,8 @@ export type EmailLocale = (typeof EMAIL_LOCALES)[number];
 
 export const DEFAULT_EMAIL_LOCALE: EmailLocale = "en";
 
-/** Client header carrying the SPA language (`opentrip-lang` / i18next). */
-export const EMAIL_LANG_HEADER = "x-opentrip-lang";
+/** Client header carrying the SPA language (`gebook-lang` / i18next). */
+export const EMAIL_LANG_HEADER = "x-gebook-lang";
 
 function isEmailLocale(value: string): value is EmailLocale {
   return (EMAIL_LOCALES as readonly string[]).includes(value);
@@ -19,7 +19,7 @@ export function normalizeEmailLocale(raw: string | null | undefined): EmailLocal
 }
 
 /**
- * Resolve mail locale: explicit `x-opentrip-lang` first, then Accept-Language,
+ * Resolve mail locale: explicit `x-gebook-lang` first, then Accept-Language,
  * then English. Prefer the SPA header so inbox language matches the UI the
  * user was using when they triggered the mail.
  */

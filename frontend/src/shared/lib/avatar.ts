@@ -98,7 +98,7 @@ export function gradientAvatarUrl(seed: string): string {
 }
 
 /** Fixed seed for the AI agent so its avatar is identical across every trip. */
-export const AGENT_AVATAR_SEED = "opentrip-agent";
+export const AGENT_AVATAR_SEED = "gebook-agent";
 
 /** Gradient avatar with an extra dither layer, used for the AI agent. */
 export function agentAvatarUrl(seed: string = AGENT_AVATAR_SEED): string {

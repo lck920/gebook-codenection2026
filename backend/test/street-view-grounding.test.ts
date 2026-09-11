@@ -24,7 +24,7 @@ import {
   isAgentStatusPart,
   sanitizeAgentUiParts,
   validatedAgentUiSpec,
-} from "@opentrip/agent-ui-catalog";
+} from "@gebook/agent-ui-catalog";
 
 function message(
   role: "user" | "assistant",
@@ -297,22 +297,22 @@ describe("StreetViewGroundingService", () => {
     });
 
     expect(spans.map((span) => span.name)).toEqual([
-      "opentrip.provider.geo.place_search",
-      "opentrip.provider.street_view.search",
+      "gebook.provider.geo.place_search",
+      "gebook.provider.street_view.search",
     ]);
     expect(spans[0]?.fields).toMatchObject({
       requestId: "request-1",
       turnId: "turn-1",
       requestedLimit: 5,
-      "opentrip.provider.result_count": 1,
+      "gebook.provider.result_count": 1,
     });
     expect(spans[1]?.fields).toMatchObject({
       requestId: "request-1",
       turnId: "turn-1",
       radiusMeters: 100,
       requestedLimit: 5,
-      "opentrip.provider.outcome": "found",
-      "opentrip.provider.result_count": 2,
+      "gebook.provider.outcome": "found",
+      "gebook.provider.result_count": 2,
     });
     expect(logs).toEqual(
       expect.arrayContaining([

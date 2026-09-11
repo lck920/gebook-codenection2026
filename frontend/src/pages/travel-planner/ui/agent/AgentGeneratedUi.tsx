@@ -13,7 +13,7 @@ import {
   agentUiCatalog,
   allowedStreetViewImageIds,
   safeAgentUiSpec,
-} from "@opentrip/agent-ui-catalog";
+} from "@gebook/agent-ui-catalog";
 import {
   AlertTriangle,
   CheckCircle2,

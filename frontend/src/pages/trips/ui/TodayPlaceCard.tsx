@@ -13,7 +13,7 @@ import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 
-const STORAGE_PREFIX = "opentrip.today-place.v1";
+const STORAGE_PREFIX = "gebook.today-place.v1";
 
 function storageKey(userId: string | undefined): string {
   return `${STORAGE_PREFIX}:${userId ?? "anonymous"}`;

@@ -36,12 +36,12 @@
     "503": {
       "eyebrow": "Maintenance",
       "title": "We're tuning up the itinerary",
-      "body": "OpenTrip is briefly down for maintenance. We'll be back on the road shortly — thanks for your patience."
+      "body": "Gebook is briefly down for maintenance. We'll be back on the road shortly — thanks for your patience."
     },
     "offline": {
       "eyebrow": "Offline",
       "title": "You've lost the signal",
-      "body": "We can't reach OpenTrip right now. Check your connection and try again — your trip is waiting."
+      "body": "We can't reach Gebook right now. Check your connection and try again — your trip is waiting."
     }
   }
 }

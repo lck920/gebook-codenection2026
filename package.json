@@ -9,20 +9,20 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "pnpm --filter @opentrip/web --filter @opentrip/api --parallel dev",
+    "dev": "pnpm --filter @gebook/web --filter @gebook/api --parallel dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
-    "db:migrate": "pnpm --filter @opentrip/api db:migrate",
-    "db:seed": "pnpm --filter @opentrip/api db:seed",
-    "db:reset": "pnpm --filter @opentrip/api db:reset",
-    "db:generate": "pnpm --filter @opentrip/api db:generate",
-    "db:pull": "pnpm --filter @opentrip/api db:pull",
-    "db:studio": "pnpm --filter @opentrip/api db:studio"
+    "db:migrate": "pnpm --filter @gebook/api db:migrate",
+    "db:seed": "pnpm --filter @gebook/api db:seed",
+    "db:reset": "pnpm --filter @gebook/api db:reset",
+    "db:generate": "pnpm --filter @gebook/api db:generate",
+    "db:pull": "pnpm --filter @gebook/api db:pull",
+    "db:studio": "pnpm --filter @gebook/api db:studio"
   },
   "devDependencies": {
-    "@opentrip/observability-contract": "workspace:*",
+    "@gebook/observability-contract": "workspace:*",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8"

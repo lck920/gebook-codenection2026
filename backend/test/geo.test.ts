@@ -72,7 +72,7 @@ function mockProvider(
 
 const BASE_ENV: RawEnv = {
   DATABASE_PROVIDER: "postgres",
-  DATABASE_URL: "postgres://example.test/opentrip",
+  DATABASE_URL: "postgres://example.test/gebook",
   BETTER_AUTH_SECRET: "a-secure-test-secret-with-32-characters",
   BASE_URL: "https://api.example.test",
   STORAGE_BACKEND: "fs",
@@ -273,7 +273,7 @@ describe("geo provider selection", () => {
       nominatimBaseUrl: "https://nominatim.example.test",
       overpassBaseUrl: "https://overpass.example.test",
       osrmBaseUrl: "https://osrm.example.test",
-      userAgent: "OpenTrip-test",
+      userAgent: "Gebook-test",
     });
     await expect(provider.reviewLookup({ placeId: "node/1" })).resolves.toEqual({
       placeId: "node/1",

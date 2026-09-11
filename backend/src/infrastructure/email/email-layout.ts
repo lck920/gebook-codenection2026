@@ -45,7 +45,7 @@ export function renderEmailLayout(content: EmailLayoutContent): string {
           <tr>
             <td style="padding:0 0 20px 4px;">
               <a href="${siteUrl}" style="text-decoration:none;color:${foreground};font-family:${fontSans};font-size:15px;font-weight:600;letter-spacing:-0.02em;">
-                OpenTrip
+                Gebook
               </a>
             </td>
           </tr>
@@ -72,7 +72,7 @@ export function renderEmailLayout(content: EmailLayoutContent): string {
           </tr>
           <tr>
             <td style="padding:20px 4px 0;font-family:${fontSans};font-size:12px;line-height:1.5;color:${muted};">
-              OpenTrip · <a href="${siteUrl}" style="color:${muted};text-decoration:underline;">opentrip.im</a>
+              Gebook · <a href="${siteUrl}" style="color:${muted};text-decoration:underline;">gebook.im</a>
             </td>
           </tr>
         </table>

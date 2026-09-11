@@ -27,7 +27,7 @@ interface LocalJournalDocument {
   entries: LocalJournalEntry[];
 }
 
-const STORAGE_PREFIX = "opentrip.journal-preview.v1";
+const STORAGE_PREFIX = "gebook.journal-preview.v1";
 
 export function journalStorageKey(userId: string): string {
   return `${STORAGE_PREFIX}:${userId}`;

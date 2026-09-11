@@ -8,7 +8,7 @@ importers:
 
   .:
     devDependencies:
-      '@opentrip/observability-contract':
+      '@gebook/observability-contract':
         specifier: workspace:*
         version: link:packages/observability-contract
       tsx:
@@ -38,18 +38,18 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.850.0
         version: 3.1079.0
+      '@gebook/agent-ui-catalog':
+        specifier: workspace:*
+        version: link:../packages/agent-ui-catalog
+      '@gebook/observability-contract':
+        specifier: workspace:*
+        version: link:../packages/observability-contract
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.19.14(hono@4.12.27)
       '@opentelemetry/api':
         specifier: ^1.9.1
         version: 1.9.1
-      '@opentrip/agent-ui-catalog':
-        specifier: workspace:*
-        version: link:../packages/agent-ui-catalog
-      '@opentrip/observability-contract':
-        specifier: workspace:*
-        version: link:../packages/observability-contract
       '@prisma/adapter-mariadb':
         specifier: ^7.8.0
         version: 7.8.0
@@ -138,6 +138,12 @@ importers:
       '@base-ui/react':
         specifier: 1.6.0
         version: 1.6.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@gebook/agent-ui-catalog':
+        specifier: workspace:*
+        version: link:../packages/agent-ui-catalog
+      '@gebook/observability-contract':
+        specifier: workspace:*
+        version: link:../packages/observability-contract
       '@json-render/react':
         specifier: ^0.19.0
         version: 0.19.0(react@19.2.7)(zod@4.4.3)
@@ -150,12 +156,6 @@ importers:
       '@milkdown/react':
         specifier: ^7.21.2
         version: 7.21.2(@codemirror/language@6.12.4)(@codemirror/state@6.7.1)(@codemirror/view@6.43.6)(prosemirror-model@1.25.10)(prosemirror-state@1.4.4)(prosemirror-view@1.42.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.9.3)
-      '@opentrip/agent-ui-catalog':
-        specifier: workspace:*
-        version: link:../packages/agent-ui-catalog
-      '@opentrip/observability-contract':
-        specifier: workspace:*
-        version: link:../packages/observability-contract
       '@tanstack/react-query':
         specifier: ^5.62.7
         version: 5.101.2(react@19.2.7)

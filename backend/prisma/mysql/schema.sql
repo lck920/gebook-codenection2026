@@ -1,4 +1,4 @@
--- OpenTrip MySQL / MariaDB schema (MySQL 8+).
+-- Gebook MySQL / MariaDB schema (MySQL 8+).
 -- Applied by prisma/mysql/apply-schema.ts when DATABASE_PROVIDER=mysql.
 -- Keep in sync with the Postgres Prisma model (apps/api/prisma/schema.prisma).
 

@@ -1,5 +1,5 @@
 {
-  "name": "@opentrip/web",
+  "name": "@gebook/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -20,8 +20,8 @@
     "@marsidev/react-turnstile": "^1.5.3",
     "@milkdown/crepe": "^7.21.2",
     "@milkdown/react": "^7.21.2",
-    "@opentrip/agent-ui-catalog": "workspace:*",
-    "@opentrip/observability-contract": "workspace:*",
+    "@gebook/agent-ui-catalog": "workspace:*",
+    "@gebook/observability-contract": "workspace:*",
     "@tanstack/react-query": "^5.62.7",
     "ai": "^7.0.18",
     "better-auth": "^1.2.7",

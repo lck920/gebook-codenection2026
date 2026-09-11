@@ -207,7 +207,7 @@
         "about": {
             "title": "About",
             "version": "Version {{version}}",
-            "description": "OpenTrip is a collaborative trip planner for friends and families."
+            "description": "Gebook is a collaborative trip planner for friends and families."
         }
     }
 }

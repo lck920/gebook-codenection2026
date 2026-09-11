@@ -161,7 +161,7 @@ export class TripRealtimeObject {
 
   private async publish(request: Request): Promise<Response> {
     if (
-      request.headers.get("X-OpenTrip-Realtime-Secret") !==
+      request.headers.get("X-Gebook-Realtime-Secret") !==
       this.env.REALTIME_GRANT_SECRET
     ) {
       return new Response("Forbidden", { status: 403 });

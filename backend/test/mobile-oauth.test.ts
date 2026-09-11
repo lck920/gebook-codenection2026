@@ -9,7 +9,7 @@ const GOOGLE_AUTH_URL =
 function baseConfig(googleOAuth: AppConfig["googleOAuth"]): AppConfig {
   return {
     databaseProvider: "postgres",
-    databaseUrl: "postgres://example.test/opentrip",
+    databaseUrl: "postgres://example.test/gebook",
     databaseSsl: "off",
     betterAuthSecret: "a-secure-test-secret-with-32-characters",
     betterAuthUrl: "https://api.example.test",
@@ -33,7 +33,7 @@ function baseConfig(googleOAuth: AppConfig["googleOAuth"]): AppConfig {
         nominatimBaseUrl: "https://nominatim.example.test",
         overpassBaseUrl: "https://overpass.example.test",
         osrmBaseUrl: "https://osrm.example.test",
-        userAgent: "OpenTrip-test",
+        userAgent: "Gebook-test",
       },
       googleMapsApiKey: undefined,
       timeoutMs: 5_000,
@@ -43,7 +43,7 @@ function baseConfig(googleOAuth: AppConfig["googleOAuth"]): AppConfig {
       ignoreRobotsTxt: false,
       disableGeocoding: false,
       timeoutMs: 30_000,
-      geocodeUserAgent: "OpenTrip-test",
+      geocodeUserAgent: "Gebook-test",
     },
     ai: null,
     observability: {

@@ -36,7 +36,7 @@ export interface DailyFeelsLikeSnapshot {
   morn?: number;
 }
 
-/** One forecast point (hour or day) in OpenTrip naming. */
+/** One forecast point (hour or day) in Gebook naming. */
 export interface WeatherForecastEntry {
   /** Unix seconds (UTC). */
   dt: number;

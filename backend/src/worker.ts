@@ -301,7 +301,7 @@ export default Sentry.withSentry(
     async fetch(request: Request, env: WorkerEnv, ctx: WorkerExecutionContext) {
       setErrorReporter((error, fields) => {
         Sentry.withScope((scope) => {
-          if (fields) scope.setContext("opentrip", fields);
+          if (fields) scope.setContext("gebook", fields);
           Sentry.captureException(error);
         });
       });

@@ -29,7 +29,7 @@ export const authClient = createAuthClient({
     onRequest(context) {
       const headers = new Headers(context.headers);
       headers.set(
-        "x-opentrip-lang",
+        "x-gebook-lang",
         i18n.resolvedLanguage?.split("-")[0] ?? i18n.language?.split("-")[0] ?? "en",
       );
       return { ...context, headers };

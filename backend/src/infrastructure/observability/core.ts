@@ -37,7 +37,7 @@ export interface TraceFields extends LogFields {
 
 type ErrorReporter = (error: unknown, fields?: LogFields) => void;
 
-const tracer = trace.getTracer("opentrip-api");
+const tracer = trace.getTracer("gebook-api");
 let aiTelemetryRegistered = false;
 let errorReporter: ErrorReporter = () => {};
 let defaultRuntime: RuntimeName = "node";
@@ -177,21 +177,21 @@ function sanitizeAttributes(fields: TraceFields): Attributes {
   const safe = sanitizeTelemetryValue(fields) as Record<string, unknown>;
   const canonicalNames: Record<string, string> = {
     requestId: "request.id",
-    tripId: "opentrip.trip.id",
-    agentSessionId: "opentrip.agent.session_id",
-    turnId: "opentrip.agent.turn_id",
-    messageId: "opentrip.agent.message_id",
-    suggestionId: "opentrip.agent.suggestion_id",
+    tripId: "gebook.trip.id",
+    agentSessionId: "gebook.agent.session_id",
+    turnId: "gebook.agent.turn_id",
+    messageId: "gebook.agent.message_id",
+    suggestionId: "gebook.agent.suggestion_id",
     toolCallId: "gen_ai.tool.call.id",
-    operationKind: "opentrip.operation.kind",
-    tripVersionBefore: "opentrip.trip.version_before",
-    trigger: "opentrip.agent.trigger",
-    runtime: "opentrip.runtime",
-    uiContractVersion: "opentrip.agent.ui.contract_version",
-    uiAttempt: "opentrip.agent.ui.attempt",
-    uiHighRisk: "opentrip.agent.ui.high_risk",
-    uiOutcome: "opentrip.agent.ui.outcome",
-    uiReason: "opentrip.agent.ui.reason",
+    operationKind: "gebook.operation.kind",
+    tripVersionBefore: "gebook.trip.version_before",
+    trigger: "gebook.agent.trigger",
+    runtime: "gebook.runtime",
+    uiContractVersion: "gebook.agent.ui.contract_version",
+    uiAttempt: "gebook.agent.ui.attempt",
+    uiHighRisk: "gebook.agent.ui.high_risk",
+    uiOutcome: "gebook.agent.ui.outcome",
+    uiReason: "gebook.agent.ui.reason",
   };
   return Object.fromEntries(
     Object.entries(safe).filter(

@@ -68,7 +68,7 @@ export function parseMysqlConnectionString(connectionString: string): {
   const database = decodeURIComponent(u.pathname.replace(/^\//, "")).trim();
   if (!database) {
     throw new Error(
-      "DATABASE_URL must include a database path, e.g. mysql://user:pass@host:3306/opentrip",
+      "DATABASE_URL must include a database path, e.g. mysql://user:pass@host:3306/gebook",
     );
   }
   return {

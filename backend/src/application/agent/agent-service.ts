@@ -14,11 +14,11 @@ import {
   isAgentStatusPart,
   isAgentUiPart,
   sanitizeAgentUiParts,
-} from "@opentrip/agent-ui-catalog";
+} from "@gebook/agent-ui-catalog";
 import {
   fingerprintMessageText,
   textFromMessageParts,
-} from "@opentrip/observability-contract";
+} from "@gebook/observability-contract";
 import type { Trip, TripRepository } from "../../domain/trip";
 import type { TripChangePublisher } from "../../domain/realtime";
 import { AGENT_COMMENT_AUTHOR } from "../../domain/trip";
@@ -157,7 +157,7 @@ export class AgentService {
   ) {}
 
   private async load(tripId: string): Promise<Trip> {
-    return this.observability.startSpan("opentrip.agent.load_trip", { tripId }, async () => {
+    return this.observability.startSpan("gebook.agent.load_trip", { tripId }, async () => {
       const trip = await this.tripRepo.findById(tripId);
       if (!trip) {
         throw new NotFoundError("trip_not_found", `Trip ${tripId} not found`);
@@ -168,7 +168,7 @@ export class AgentService {
 
   private listContextMessages(tripId: string): Promise<AgentMessage[]> {
     return this.observability.startSpan(
-      "opentrip.agent.load_history",
+      "gebook.agent.load_history",
       { tripId, historyLimit: CHAT_CONTEXT_LIMIT },
       () => this.sessionRepo.listMessages(tripId, { limit: CHAT_CONTEXT_LIMIT }),
     );
@@ -384,7 +384,7 @@ export class AgentService {
     });
     defer(persistHold);
 
-    const chatSpan = this.observability.startTrace("opentrip.agent.chat", {
+    const chatSpan = this.observability.startTrace("gebook.agent.chat", {
       requestId: observability.requestId,
       tripId,
       agentSessionId: tripId,
@@ -452,7 +452,7 @@ export class AgentService {
           else controller.enqueue(next.value);
         },
         async cancel(reason) {
-          chatSpan.setAttribute("opentrip.agent.client_disconnected", true);
+          chatSpan.setAttribute("gebook.agent.client_disconnected", true);
           await reader.cancel(reason);
         },
       });
@@ -558,7 +558,7 @@ export class AgentService {
     approval: { id: string; approved: boolean; reason?: string },
   ): Promise<TripDto | { dismissed: true }> {
     return this.observability.startSpan(
-      "opentrip.agent.suggestion_response",
+      "gebook.agent.suggestion_response",
       {
         tripId,
         suggestionId: approval.id,
@@ -671,7 +671,7 @@ export class AgentService {
       ? await fingerprintMessageText(messageText)
       : undefined;
     return this.observability.startSpan(
-      "opentrip.agent.persist_message",
+      "gebook.agent.persist_message",
       {
         ...context,
         tripId: trip.id,
@@ -704,7 +704,7 @@ export class AgentService {
     messageText: string,
     observability: AgentObservabilityContext,
   ): Promise<void> {
-    const span = this.observability.startTrace("opentrip.agent.addressed_check", {
+    const span = this.observability.startTrace("gebook.agent.addressed_check", {
       tripId,
       turnId: observability.turnId,
       requestId: observability.requestId,
@@ -766,7 +766,7 @@ export class AgentService {
     },
     observability: AgentObservabilityContext = modelObservability("ambient"),
   ): Promise<void> {
-    const span = this.observability.startTrace("opentrip.agent.ambient_reply", {
+    const span = this.observability.startTrace("gebook.agent.ambient_reply", {
       tripId,
       turnId: observability.turnId,
       requestId: observability.requestId,
@@ -834,7 +834,7 @@ export class AgentService {
     event: OperationEvent,
     observability: AgentObservabilityContext,
   ): Promise<void> {
-    const span = this.observability.startTrace("opentrip.agent.operation_evaluation", {
+    const span = this.observability.startTrace("gebook.agent.operation_evaluation", {
       tripId: event.tripId,
       turnId: observability.turnId,
       requestId: observability.requestId,
@@ -927,7 +927,7 @@ export class AgentService {
   private applyPatch(trip: Trip, patch: PendingPatch, actorUserId: string) {
     const versionBefore = trip.toSnapshot().version;
     return this.observability.startSpan(
-      "opentrip.trip.operation.apply",
+      "gebook.trip.operation.apply",
       {
         tripId: trip.id,
         operationKind: patch.kind,
@@ -943,8 +943,8 @@ export class AgentService {
           },
           patch,
         );
-        span.setAttribute("opentrip.trip.version_after", trip.toSnapshot().version);
-        span.setAttribute("opentrip.operation.ok", result.ok);
+        span.setAttribute("gebook.trip.version_after", trip.toSnapshot().version);
+        span.setAttribute("gebook.operation.ok", result.ok);
         return result;
       },
     );

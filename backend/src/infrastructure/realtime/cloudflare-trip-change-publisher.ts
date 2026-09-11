@@ -36,7 +36,7 @@ export class CloudflareTripChangePublisher implements TripChangePublisher {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-OpenTrip-Realtime-Secret": this.secret,
+              "X-Gebook-Realtime-Secret": this.secret,
             },
             body: JSON.stringify(change),
           }),

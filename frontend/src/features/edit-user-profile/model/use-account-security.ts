@@ -282,7 +282,7 @@ export function useAccountSecurity({ onClose }: { onClose: () => void }) {
     try {
       const result = await authClient.twoFactor.enable({
         password: hasCredential ? twoFactorPassword : undefined,
-        issuer: "OpenTrip",
+        issuer: "Gebook",
       });
       if (result.error) {
         notifyError(t("settings.profile.security.errors.twoFactorEnableFailed"));

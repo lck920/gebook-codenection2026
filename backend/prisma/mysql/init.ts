@@ -8,7 +8,7 @@
  * (or workflow_dispatch init_db). Turn the flag off after a successful run.
  *
  * Usage (from apps/api):
- *   DATABASE_URL=mysql://user:pass@host:port/opentrip \
+ *   DATABASE_URL=mysql://user:pass@host:port/gebook \
  *     pnpm exec tsx --env-file-if-exists=../../.env prisma/mysql/init.ts
  */
 import { spawn } from "node:child_process";
@@ -50,7 +50,7 @@ function parseMysqlUrl(connectionString: string): {
   const database = decodeURIComponent(u.pathname.replace(/^\//, "")).trim();
   if (!database) {
     throw new Error(
-      "DATABASE_URL must include a database path, e.g. mysql://user:pass@host:3306/opentrip",
+      "DATABASE_URL must include a database path, e.g. mysql://user:pass@host:3306/gebook",
     );
   }
   // Connect without selecting a DB so CREATE DATABASE can run.

@@ -3,10 +3,10 @@ import { handleRealtimeUpgrade } from "../src/worker";
 
 const secret = "test-realtime-secret-at-least-32-bytes-long";
 
-function request(origin: string | null = "https://opentrip.im", upgrade = "websocket") {
+function request(origin: string | null = "https://gebook.im", upgrade = "websocket") {
   const headers: Record<string, string> = { Upgrade: upgrade };
   if (origin !== null) headers["Origin"] = origin;
-  return new Request("https://api.opentrip.im/api/trips/trip-1/realtime", {
+  return new Request("https://api.gebook.im/api/trips/trip-1/realtime", {
     headers,
   });
 }
@@ -24,7 +24,7 @@ function fixture(options?: { session?: boolean; member?: boolean }) {
   };
   const user = { id: "user-1", name: "Ada", email: "ada@example.com", image: null };
   const container = {
-    config: { trustedOrigins: ["https://opentrip.im"] },
+    config: { trustedOrigins: ["https://gebook.im"] },
     auth: {
       api: {
         getSession: vi.fn(async () =>
@@ -54,7 +54,7 @@ describe("Cloudflare realtime upgrade route", () => {
   it("rejects non-upgrade and untrusted-origin requests", async () => {
     const { env, container } = fixture();
     await expect(
-      handleRealtimeUpgrade(request("https://opentrip.im", "no"), env as never, container as never),
+      handleRealtimeUpgrade(request("https://gebook.im", "no"), env as never, container as never),
     ).resolves.toMatchObject({ status: 426 });
     await expect(
       handleRealtimeUpgrade(request("https://evil.example"), env as never, container as never),

@@ -61,7 +61,7 @@ export class CloudflareStreetViewCache implements StreetViewCache {
   }
 
   private key(kind: "metadata" | "preview", imageId: string): Request {
-    const url = new URL("https://street-view-cache.opentrip.invalid/");
+    const url = new URL("https://street-view-cache.gebook.invalid/");
     url.pathname = [
       CACHE_SCHEMA_VERSION,
       encodeURIComponent(this.provider),

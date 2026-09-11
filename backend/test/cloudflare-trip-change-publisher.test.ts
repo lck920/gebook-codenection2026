@@ -32,7 +32,7 @@ describe("CloudflareTripChangePublisher", () => {
     expect(getByName).toHaveBeenCalledWith("trip-1");
     const request = fetch.mock.calls[0]![0];
     expect(request.url).toContain("tripId=trip-1");
-    expect(request.headers.get("X-OpenTrip-Realtime-Secret")).toBeTruthy();
+    expect(request.headers.get("X-Gebook-Realtime-Secret")).toBeTruthy();
     await expect(request.json()).resolves.toEqual(change);
   });
 

@@ -13,7 +13,7 @@ const filler = Object.fromEntries(
    "airbnbSearch","airbnbListingDetails","readTripMedia","renameTrip","addDay","deleteDay",
    "updateDay","reorderDays","updateStop","moveStop","appendStopNote","addExpense","updateExpense"]
    .map((n) => [n, tool({
-     description: `Tool ${n} for the OpenTrip planning agent.`,
+     description: `Tool ${n} for the Gebook planning agent.`,
      inputSchema: z.object({ day: z.number().optional(), name: z.string().optional(), query: z.string().optional(), lat: z.number().optional(), lng: z.number().optional() }),
      execute: async () => ({ ok: true }),
    })]),
@@ -40,7 +40,7 @@ for (const run of [1, 2]) {
   try {
     const r = await generateText({
       model,
-      system: `You are the OpenTrip trip agent in a write-capable chat.
+      system: `You are the Gebook trip agent in a write-capable chat.
 Research with placeSearch before inventing coordinates, then call insertStop for each planned stop.
 Trip "USA trip", 5 days from 2026-09-11, 0 stops, 2 people.`,
       messages: [{ role: "user", content: "Jane Doe: @agent plan day 1 in New York for me — add 3 stops with times." }],

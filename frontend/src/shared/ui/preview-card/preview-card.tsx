@@ -2,7 +2,7 @@ import type React from "react";
 import { PreviewCard as PreviewCardPrimitive } from "@base-ui/react/preview-card";
 import { cn } from "@/shared/lib";
 
-/** coss-style PreviewCard adapted to OpenTrip tokens (Base UI under the hood).
+/** coss-style PreviewCard adapted to Gebook tokens (Base UI under the hood).
  * Use for rich, non-interactive content revealed on hover/focus. */
 export const PreviewCard: typeof PreviewCardPrimitive.Root =
   PreviewCardPrimitive.Root;

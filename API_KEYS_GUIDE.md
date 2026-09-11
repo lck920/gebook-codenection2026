@@ -130,7 +130,7 @@ UNSPLASH_ACCESS_KEY=your-unsplash-access-key-here
 - **Database (PostgreSQL / SQLite / MySQL)**:
   ```env
   DATABASE_PROVIDER=postgres
-  DATABASE_URL=postgres://opentrip:opentrip@localhost:5430/opentrip
+  DATABASE_URL=postgres://gebook:gebook@localhost:5430/gebook
   ```
 
 ---

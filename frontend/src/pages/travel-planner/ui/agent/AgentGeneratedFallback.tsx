@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CircleAlert } from "lucide-react";
-import type { AgentStatusPart } from "@opentrip/agent-ui-catalog";
+import type { AgentStatusPart } from "@gebook/agent-ui-catalog";
 import { Button } from "@/shared/ui/button";
 
 export function AgentGeneratedFallback({

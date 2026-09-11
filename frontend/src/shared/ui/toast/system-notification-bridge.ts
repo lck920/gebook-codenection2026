@@ -9,7 +9,7 @@ let installed = false;
 
 /**
  * Mirrors in-app toasts to system notifications on mobile, so they reach the
- * user as push-style banners while OpenTrip is in the background. Fires only
+ * user as push-style banners while Gebook is in the background. Fires only
  * when the page is hidden — a visible page already renders the in-app toast
  * and a system banner would duplicate it — and only after the user granted
  * Notification permission (asked by `features/mobile-onboarding`).

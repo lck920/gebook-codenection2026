@@ -77,7 +77,7 @@ function publishRequest(body: TripChange, authorized = true) {
   return new Request("https://internal/publish?tripId=trip-1", {
     method: "POST",
     headers: authorized
-      ? { "X-OpenTrip-Realtime-Secret": secret }
+      ? { "X-Gebook-Realtime-Secret": secret }
       : undefined,
     body: JSON.stringify(body),
   });

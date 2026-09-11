@@ -1,5 +1,5 @@
 /**
- * OpenTrip email brand tokens — hex mirrors of web `colors.css` semantic
+ * Gebook email brand tokens — hex mirrors of web `colors.css` semantic
  * ramps so transactional mail matches the SPA without shipping CSS vars
  * (most clients strip or ignore custom properties).
  *
@@ -25,7 +25,7 @@ export const EMAIL_BRAND = {
   fontMono:
     'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
   maxWidth: 480,
-  siteUrl: "https://opentrip.im",
+  siteUrl: "https://gebook.im",
 } as const;
 
 export function escapeHtml(value: string): string {

@@ -27,7 +27,7 @@ export function initializeNodeObservability(config: ObservabilityConfig): void {
   });
   setErrorReporter((error, fields) => {
     Sentry.withScope((scope) => {
-      if (fields) scope.setContext("opentrip", fields);
+      if (fields) scope.setContext("gebook", fields);
       Sentry.captureException(error);
     });
   });
