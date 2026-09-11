@@ -96,8 +96,6 @@ The full flow we sketched before building: landing → login → dashboard → c
 
 **UI Prototype:** [Public Link]
 
-Screenshot checklist — capture each on your own machine (`pnpm dev`, with at least one populated trip) and save into [`assets/screens/`](assets/screens), then this section renders automatically:
-
 ![Dashboard](assets/screens/dashboard.png)
 *Trips Hub — active trips, destination discovery tiles, and traveller level/streak.*
 
@@ -110,14 +108,11 @@ Screenshot checklist — capture each on your own machine (`pnpm dev`, with at l
 ![Group preferences](assets/screens/group-preferences.png)
 *Group Preferences Sync — each member's budget/pace/interests merged into one match-alignment view.*
 
-![AI agent chat](assets/screens/agent-chat.png)
-*AI co-planner chat with a pending-patch approval card — the change is proposed, not yet applied.*
-
 ![Re-Plan on the Fly](assets/screens/re-plan.png)
 *"Re-Plan on the Fly" — the one-click emergency dialog for a flight delay, bad weather, or a closed attraction.*
 
 ![Invite flow](assets/screens/invite.png)
-*The invite preview a new member sees before joining the trip.*
+*The invite preview an invited member sees when accepting a trip invite.*
 
 ---
 
@@ -180,7 +175,7 @@ Gebook/
 │       │   ├── landing/          # Landing Page (Hero, CTAs, Features)
 │       │   ├── finance/          # Finance & Expense Splitting (/finance)
 │       │   ├── travel-planner/   # Interactive Itinerary & Live Map
-│       │   └── trips/            # Trips Hub & Duolingo-style Levels
+│       │   └── trips/            # Trips Hub
 │       ├── entities/             # Gamification, Expenses, Trips
 │       └── shared/                # UI components, auth client, API
 │
