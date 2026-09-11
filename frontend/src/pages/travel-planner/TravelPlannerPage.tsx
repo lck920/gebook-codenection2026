@@ -806,6 +806,8 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
               status.mutate(trip.status === "planning" ? "active" : "planning")
             }
             statusPending={status.isPending}
+            onOpenGroupPreferences={() => setGroupPrefsOpen(true)}
+            onOpenRePlan={() => setRePlanOpen(true)}
           />
 
           <PlannerColumns

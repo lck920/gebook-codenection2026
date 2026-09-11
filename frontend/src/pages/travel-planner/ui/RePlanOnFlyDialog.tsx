@@ -3,12 +3,14 @@ import {
   Dialog,
   DialogPortal,
   DialogBackdrop,
+  DialogViewport,
   DialogPopup,
   DialogHeader,
   DialogTitle,
   DialogDescription,
 } from "@/shared/ui/dialog";
 import { toastManager } from "@/shared/ui/toast";
+import { cn, VISUAL_VIEWPORT_FIXED_CLASS } from "@/shared/lib";
 
 interface RePlanOnFlyDialogProps {
   open: boolean;
@@ -104,8 +106,14 @@ export function RePlanOnFlyDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogPortal>
-        <DialogBackdrop />
-        <DialogPopup className="max-w-md rounded-3xl p-6 sm:max-w-lg">
+        <DialogBackdrop className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-[opacity] duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
+        <DialogViewport
+          className={cn(
+            VISUAL_VIEWPORT_FIXED_CLASS,
+            "z-50 flex items-center justify-center overflow-y-auto p-4 md:p-6",
+          )}
+        >
+        <DialogPopup className="max-h-[min(92%,760px)] w-full max-w-md overflow-y-auto rounded-3xl bg-card p-6 shadow-[var(--shadow-border),var(--shadow-lg)] outline-none transition-[opacity,scale] duration-200 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 sm:max-w-lg">
           <DialogHeader>
             <div className="flex items-center gap-2">
               <span className="flex size-10 items-center justify-center rounded-2xl bg-amber-500/10 text-xl text-amber-500">
@@ -202,6 +210,7 @@ export function RePlanOnFlyDialog({
             </button>
           </div>
         </DialogPopup>
+        </DialogViewport>
       </DialogPortal>
     </Dialog>
   );

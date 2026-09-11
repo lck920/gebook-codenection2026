@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ArrowLeftIcon, CheckIcon, WalletIcon } from "lucide-react";
+import { ArrowLeftIcon, CheckIcon, UsersIcon, WalletIcon, ZapIcon } from "lucide-react";
 import type { Trip } from "@/entities/trip";
 import { Avatar } from "@/shared/ui/avatar";
 import { cn, formatMoney } from "@/shared/lib";
@@ -35,6 +35,8 @@ export function PlannerHeader({
   inviteSlot,
   onToggleStatus,
   statusPending,
+  onOpenGroupPreferences,
+  onOpenRePlan,
 }: {
   trip: Trip;
   subtitle: string;
@@ -43,6 +45,8 @@ export function PlannerHeader({
   inviteSlot: ReactNode;
   onToggleStatus: () => void;
   statusPending: boolean;
+  onOpenGroupPreferences: () => void;
+  onOpenRePlan: () => void;
 }) {
   const { planned, pool } = budgetChip(trip);
   const locked = trip.status !== "planning";
@@ -92,6 +96,25 @@ export function PlannerHeader({
         </div>
 
         <div className="max-lg:hidden">{inviteSlot}</div>
+
+        <button
+          type="button"
+          onClick={onOpenGroupPreferences}
+          aria-label="Group preferences"
+          className="wf-interactive wf-pressable flex size-7.5 items-center justify-center rounded-[9px] bg-muted text-foreground hover:bg-accent max-lg:hidden"
+        >
+          <UsersIcon className="size-3.5" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          onClick={onOpenRePlan}
+          aria-label="Re-plan on the fly"
+          className="wf-interactive wf-pressable flex size-7.5 items-center justify-center rounded-[9px] bg-muted text-foreground hover:bg-accent max-lg:hidden"
+        >
+          <ZapIcon className="size-3.5" aria-hidden="true" />
+        </button>
+
         <span className="h-5.5 w-px bg-border max-lg:hidden" aria-hidden="true" />
 
         <span className="inline-flex h-8.5 items-center gap-1.5 rounded-[10px] bg-muted px-3 text-[12.5px] font-semibold max-md:hidden">
