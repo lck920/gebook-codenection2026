@@ -52,14 +52,14 @@ const CAPTCHA_ENDPOINTS = [
   "/email-otp/send-verification-otp",
 ] as const;
 
-/** Build Better Auth over the shared pg pool. Email + password (OTP-verified
- * sign-up) plus optional Google OAuth, change-email / password reset mail,
- * and TOTP two-factor authentication.
+/** Build Better Auth over the shared pg pool. Email + password (signs in
+ * immediately, no verification gate — a prototype simplification) plus
+ * optional Google OAuth, change-email / password reset mail, and TOTP
+ * two-factor authentication.
  *
- * Email registration requires OTP verification before a session is issued
- * (`requireEmailVerification` + `emailOTP` with
- * `overrideDefaultEmailVerification`). The outbound mail adapter is selected
- * via `EMAIL_PROVIDER` (`console` | `resend`).
+ * The `emailOTP` plugin stays wired for the forgot-password and change-email
+ * OTP flows, which still send mail via the `EMAIL_PROVIDER`-selected adapter
+ * (`console` | `resend`); it just no longer gates sign-up/sign-in.
  *
  * `defaultCurrency` is a user preference surfaced on every session; the planner
  * uses it as the default currency when composing a stop cost.
@@ -97,7 +97,7 @@ export function createAuth(
             : undefined,
         emailAndPassword: {
             enabled: true,
-            requireEmailVerification: true,
+            requireEmailVerification: false,
             sendResetPassword: async ({ user, url }, request) => {
                 const message = buildLinkEmail({
                     to: user.email,
@@ -114,11 +114,10 @@ export function createAuth(
             },
         },
         emailVerification: {
-            // With emailOTP.overrideDefaultEmailVerification, this sends an OTP
-            // instead of a magic link. sendOnSignIn covers unverified password
-            // sign-in attempts so the client can show the OTP step.
-            sendOnSignUp: true,
-            sendOnSignIn: true,
+            // Prototype: sign-in is never gated on verification (see
+            // requireEmailVerification above), so there is nothing to send.
+            sendOnSignUp: false,
+            sendOnSignIn: false,
             autoSignInAfterVerification: true,
         },
         socialProviders: config.googleOAuth

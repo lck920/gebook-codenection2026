@@ -40,6 +40,16 @@ function isEmailNotVerified(error: { code?: string; message?: string } | null | 
   );
 }
 
+function isEmailTaken(error: { code?: string; message?: string } | null | undefined) {
+  if (!error) return false;
+  const code = error.code?.toUpperCase() ?? "";
+  const message = error.message?.toLowerCase() ?? "";
+  return (
+    code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL" ||
+    message.includes("already exists")
+  );
+}
+
 export interface AuthFormProps {
   mode?: AuthMode;
   onModeChange?: (mode: AuthMode) => void;
@@ -99,6 +109,14 @@ export function AuthForm({ mode: externalMode, onModeChange }: AuthFormProps) {
     toastManager.add({
       title: t("errors.toastTitle"),
       description: t("errors.generic"),
+      type: "error",
+    });
+  }
+
+  function showEmailTakenError() {
+    toastManager.add({
+      title: t("errors.toastTitle"),
+      description: t("errors.emailTaken"),
       type: "error",
     });
   }
@@ -184,11 +202,14 @@ export function AuthForm({ mode: externalMode, onModeChange }: AuthFormProps) {
           password,
         }).catch(onFailure);
         if (result && !result.error) {
-          enterOtpStep();
           return;
         }
         if (unreachable) {
           setLocalTestSession({ name: name || "Danial", email });
+          return;
+        }
+        if (result?.error && isEmailTaken(result.error)) {
+          showEmailTakenError();
           return;
         }
         showAuthError();
@@ -666,24 +687,6 @@ export function AuthForm({ mode: externalMode, onModeChange }: AuthFormProps) {
       >
         {isSignUp ? "CREATE ACCOUNT" : "LOG IN"}
       </Button>
-
-      {/* Local Dev Instant Testing Access */}
-      <div className="relative my-2 flex items-center justify-center">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border/40" />
-        </div>
-        <span className="relative bg-background px-3 text-[10px] font-bold tracking-widest text-muted-foreground/70 uppercase">
-          or local test
-        </span>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => setLocalTestSession({ name: name || "Danial", email: email || "tester@gebook.local" })}
-        className="wf-tactile-btn flex w-full items-center justify-center gap-2 rounded-2xl border border-brand-cyan/40 bg-brand-ice/50 py-3 text-xs font-bold text-brand-midnight shadow-xs transition-all hover:bg-brand-ice dark:border-brand-sky/20 dark:bg-card/90 dark:text-brand-sky"
-      >
-        <span>⚡ Jom Test Dashboard (Instant Access)</span>
-      </button>
 
       {/* Terms and Privacy Policy Note */}
       <p className="mt-4 text-center text-[11px] leading-relaxed text-muted-foreground">
