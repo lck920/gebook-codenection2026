@@ -36,8 +36,6 @@
     "@opentelemetry/api": "^1.9.1",
     "@gebook/agent-ui-catalog": "workspace:*",
     "@gebook/observability-contract": "workspace:*",
-    "@prisma/adapter-mariadb": "^7.8.0",
-    "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@sentry/cloudflare": "^10.65.0",
     "@sentry/hono": "^10.65.0",
@@ -53,8 +51,6 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241230.0",
     "@eslint/js": "^9.17.0",
-    "@sentry/cli": "^3.6.0",
-    "@types/mysql": "^2.15.27",
     "@types/node": "^22.10.5",
     "@types/pg": "^8.11.10",
     "dotenv": "^17.4.2",
