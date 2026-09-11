@@ -96,6 +96,11 @@ export interface AppConfig {
     betterAuthSecret: string;
     betterAuthUrl: string;
     trustedOrigins: string[];
+    /** Set when the frontend is on a different origin than the API (e.g.
+     *  Vercel + Render), so the session cookie needs SameSite=None; Secure
+     *  to survive cross-site fetches. Leave unset for same-origin/local dev
+     *  over http://, where Secure cookies would be dropped entirely. */
+    crossOriginCookies: boolean;
     storage: StorageConfig;
     googleOAuth: GoogleOAuthConfig | null;
     captcha: CaptchaConfig | null;
@@ -154,6 +159,7 @@ export interface RawEnv {
     DATABASE_SSL?: string;
     BETTER_AUTH_SECRET?: string;
     TRUSTED_ORIGINS?: string;
+    CROSS_ORIGIN_COOKIES?: string;
     GOOGLE_CLIENT_ID?: string;
     GOOGLE_CLIENT_SECRET?: string;
     CAPTCHA_PROVIDER?: string;
@@ -270,6 +276,7 @@ export function loadConfig(env: RawEnv, connectionString?: string): AppConfig {
             .split(",")
             .map((origin) => origin.trim())
             .filter(Boolean),
+        crossOriginCookies: env.CROSS_ORIGIN_COOKIES?.trim().toLowerCase() === "true",
         storage: loadStorageConfig(env, publicUrl),
         googleOAuth,
         captcha: parseCaptchaConfig(env),

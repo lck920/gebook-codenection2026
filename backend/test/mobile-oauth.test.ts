@@ -14,6 +14,7 @@ function baseConfig(googleOAuth: AppConfig["googleOAuth"]): AppConfig {
     betterAuthSecret: "a-secure-test-secret-with-32-characters",
     betterAuthUrl: "https://api.example.test",
     trustedOrigins: ["https://api.example.test", "gebook://"],
+    crossOriginCookies: false,
     storage: {
       backend: "fs",
       root: "/data/uploads",

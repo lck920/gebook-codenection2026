@@ -92,9 +92,17 @@ export function createAuth(
         rateLimit: options.rateLimitStorage
             ? { customStorage: options.rateLimitStorage }
             : undefined,
-        advanced: options.ipAddressHeaders
-            ? { ipAddress: { ipAddressHeaders: options.ipAddressHeaders } }
-            : undefined,
+        advanced: {
+            ...(options.ipAddressHeaders
+                ? { ipAddress: { ipAddressHeaders: options.ipAddressHeaders } }
+                : {}),
+            // Cross-origin deploys (e.g. Vercel frontend + Render API) need
+            // SameSite=None for the session cookie to survive a cross-site
+            // fetch; Secure requires https, which local http:// dev lacks.
+            ...(config.crossOriginCookies
+                ? { defaultCookieAttributes: { sameSite: "none", secure: true } }
+                : {}),
+        },
         emailAndPassword: {
             enabled: true,
             requireEmailVerification: false,
