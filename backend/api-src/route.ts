@@ -12,12 +12,12 @@ import {
 } from "../src/infrastructure/observability";
 
 /**
- * Vercel Serverless Function entry point (Node.js runtime). Reuses the same
+ * Vercel Serverless Function handler (Node.js runtime). Reuses the same
  * Hono app as node-server.ts — the only difference is `handle()` from
- * hono/vercel instead of @hono/node-server's `serve()`. The `[[...route]]`
- * filename is Vercel's catch-all convention: every request under `/api/*`
- * (and `/api` itself) is routed here, but the Hono app still sees the
- * original path and does its own internal routing.
+ * hono/vercel instead of @hono/node-server's `serve()`. Bundled into
+ * api-dist/route.js and exported through the committed api/index.js, which
+ * a vercel.json rewrite maps every `/api/*` request onto; Hono still sees
+ * the original path and does its own internal routing.
  *
  * Runs once per warm container, not per request, so the config/container
  * construction below is a one-time cost per instance, same as a long-lived
