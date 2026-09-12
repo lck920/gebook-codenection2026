@@ -94,7 +94,7 @@ The full flow we sketched before building: landing → login → dashboard → c
 
 ## 3. Design & Prototype
 
-**UI Prototype:** [gebook-frontend.vercel.app](https://gebook-frontend.vercel.app)
+**UI Prototype:** [gebook-frontend.vercel.app](https://gebook-frontend.vercel.app?_vercel_share=umc1RMCR9Mbt0BAaqUvl8QrzibNDSBv7)
 
 ![Dashboard](assets/screens/dashboard.png)
 *Trips Hub — active trips, destination discovery tiles, and traveller level/streak.*
