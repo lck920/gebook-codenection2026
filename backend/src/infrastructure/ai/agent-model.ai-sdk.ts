@@ -203,6 +203,16 @@ function createAgentLanguageModel(config: AiConfig): LanguageModel {
     });
     return anthropic(config.model);
   }
+  if (config.provider.trim().toLowerCase() === "anthropic") {
+    // Direct Claude API. Without this branch an Anthropic key fell through to
+    // the OpenAI client below and was sent to the wrong vendor. baseURL is
+    // only for a proxy; the default is api.anthropic.com.
+    const anthropic = createAnthropic({
+      apiKey: config.apiKey,
+      ...(config.baseUrl ? { baseURL: config.baseUrl } : {}),
+    });
+    return anthropic(config.model);
+  }
   if (config.baseUrl) {
     const provider = createOpenAICompatible({
       name: config.provider,
