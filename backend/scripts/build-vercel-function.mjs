@@ -40,6 +40,9 @@ await build({
   format: "esm",
   target: "node20",
   external,
-  outfile: `${backendRoot}api/[[...route]].js`,
+  // Single-bracket catch-all: the form Vercel documents for plain api/
+  // functions. The optional [[...route]] variant is a Next.js convention,
+  // and nothing here needs it — every route lives under /api/<something>.
+  outfile: `${backendRoot}api/[...route].js`,
   logLevel: "info",
 });
