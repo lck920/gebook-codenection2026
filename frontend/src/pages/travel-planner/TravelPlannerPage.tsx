@@ -55,7 +55,7 @@ import { AgentInterventionToasts } from "./ui/agent/AgentInterventionToast";
 import { NoteEditorPane } from "./ui/NoteEditorPane";
 import { TripMapView } from "./ui/TripMapView";
 import { ScheduleBoard, type ComposeDraft } from "./ui/ScheduleBoard";
-import { BudgetBoard } from "./ui/BudgetBoard";
+import { TripBudgetPanel } from "./ui/TripBudgetPanel";
 import { FloatingMembers } from "./ui/FloatingMembers";
 import { ReservationsBoard } from "./ui/ReservationsBoard";
 import { StreetViewViewerProvider } from "./ui/street-view/StreetViewViewerProvider";
@@ -565,6 +565,10 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
 
   const headerSubtitle = formatTripSubtitle(trip, i18n.language, t);
 
+  /** Budget contributions are keyed by trip member id, not the auth user id. */
+  const currentMemberId =
+    trip?.members.find((m) => m.isCurrentUser)?.id ?? null;
+
   const sidebarProps: SidebarProps = {
     trip,
     day,
@@ -667,16 +671,11 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
       <PlannerPane active={!noteEditingStop && activeTab === "reservations"} scroll>
         <ReservationsBoard trip={trip} canEdit={trip.permissions.canEdit} />
       </PlannerPane>
-      <PlannerPane active={!noteEditingStop && activeTab === "budget"} scroll>
-        <BudgetBoard
+      <PlannerPane active={!noteEditingStop && activeTab === "budget"}>
+        <TripBudgetPanel
           trip={trip}
-          currentUserId={currentUserId}
-          defaultCurrency={preferredCurrency || trip.currency}
+          currentMemberId={currentMemberId}
           canEdit={trip.permissions.canEdit}
-          onAddExpense={(input) => actions.expense.mutate(input)}
-          onUpdateExpense={(expenseId, input) =>
-            actions.expenseUpdate.mutate({ expenseId, input })
-          }
         />
       </PlannerPane>
       {noteEditingStop ? (
@@ -845,7 +844,8 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
               <div className="relative flex min-h-0 flex-1 flex-col border-r border-border">
                 <div className="flex h-12 flex-none items-center gap-2 border-b border-border px-4.5">
                 <span className="text-[13px] font-bold tracking-tight">
-                  {t("tabs.schedule")}
+                  {boardTabs.find((item) => item.value === middleTab)?.label ??
+                    t("tabs.schedule")}
                 </span>
                 <div className="ml-auto inline-flex h-7.5 items-center gap-0.5 rounded-[10px] bg-muted p-0.5">
                   {boardTabs.map((item) => (
@@ -898,7 +898,7 @@ export function TravelPlannerPage({ tripId }: { tripId: string }) {
                   biasLng={bias?.lng}
                 />
               ) : (
-                <div className="relative min-h-0 flex-1">
+                <div className="relative flex min-h-0 flex-1 flex-col">
                   {renderPanes(middleTab, false)}
                 </div>
               )}
@@ -1029,7 +1029,7 @@ function PlannerPane({
     <div
       aria-hidden={!active}
       className={cn(
-        "absolute inset-0",
+        "absolute inset-0 flex flex-col",
         scroll && "overflow-auto",
         !active && "invisible",
       )}

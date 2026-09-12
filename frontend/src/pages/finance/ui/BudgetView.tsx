@@ -79,8 +79,8 @@ export function BudgetView({
   const leftPercent = Math.max(0, 100 - usedPercent);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3.5">
-      <div className="grid shrink-0 gap-3.5 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="@container flex min-h-0 flex-1 flex-col gap-3.5">
+      <div className="grid shrink-0 gap-3.5 @lg:grid-cols-[minmax(0,1fr)_300px]">
         <section className="flex flex-col justify-between rounded-[20px] bg-foreground p-4.5 text-background">
           <div className="flex items-start gap-3">
             <div>
@@ -141,7 +141,7 @@ export function BudgetView({
                 type="button"
                 onClick={onAddToPool}
                 disabled={!canEdit}
-                className="wf-interactive wf-pressable ml-auto inline-flex h-8.5 items-center gap-1.5 rounded-[11px] bg-background px-3.5 text-xs font-semibold text-foreground disabled:opacity-50"
+                className="wf-interactive wf-pressable ml-auto inline-flex h-8.5 shrink-0 items-center gap-1.5 rounded-[11px] bg-background px-3.5 text-xs font-semibold whitespace-nowrap text-foreground disabled:opacity-50"
               >
                 <PlusIcon className="size-3.5" aria-hidden="true" />
                 Add to pool
@@ -211,8 +211,8 @@ export function BudgetView({
       </div>
 
       <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[20px] bg-muted p-4.5">
-        <div className="flex items-start gap-3">
-          <div>
+        <div className="flex flex-wrap items-start gap-x-3 gap-y-2.5">
+          <div className="min-w-0">
             <p className="text-[11.5px] text-muted-foreground">Budget left</p>
             <p
               className={cn(
@@ -236,7 +236,7 @@ export function BudgetView({
             type="button"
             onClick={onAddItem}
             disabled={!canEdit}
-            className="wf-interactive wf-pressable ml-auto inline-flex h-8 items-center gap-1.5 rounded-[11px] bg-foreground px-3 text-xs font-semibold text-background disabled:opacity-50"
+            className="wf-interactive wf-pressable ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[11px] bg-foreground px-3 text-xs font-semibold whitespace-nowrap text-background disabled:opacity-50"
           >
             <PlusIcon className="size-3.5" aria-hidden="true" />
             Add cost
@@ -244,7 +244,7 @@ export function BudgetView({
           <button
             type="button"
             onClick={() => setAsPercent((v) => !v)}
-            className="wf-interactive wf-pressable inline-flex h-8 items-center gap-1.5 rounded-[11px] bg-card px-3 text-xs font-semibold"
+            className="wf-interactive wf-pressable inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[11px] bg-card px-3 text-xs font-semibold whitespace-nowrap"
           >
             <PercentIcon
               className="size-3.5 text-muted-foreground"
@@ -317,7 +317,7 @@ export function BudgetView({
                         .join(" · ")}
                     </p>
                   </div>
-                  <span className="ml-auto hidden shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground sm:inline">
+                  <span className="ml-auto hidden shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground @sm:inline">
                     {line.kind === "item" ? "Booking" : "Stop"}
                   </span>
                   <p className="shrink-0 font-mono text-[13px] font-semibold">
