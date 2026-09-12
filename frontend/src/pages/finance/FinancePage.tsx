@@ -228,7 +228,7 @@ export function FinancePage() {
                 ) : null}
               </div>
 
-              <div className="ml-auto flex items-center gap-2.5">
+              <div className="ml-auto flex flex-wrap items-center justify-end gap-2.5">
                 {trips.length > 1 ? (
                   <Select
                     items={trips.map((t) => ({ value: t.id, label: t.title }))}
@@ -256,7 +256,7 @@ export function FinancePage() {
                     type="button"
                     onClick={() => setPoolOpen(true)}
                     disabled={!canEdit}
-                    className="wf-interactive wf-pressable inline-flex h-10 items-center gap-1.5 rounded-xl bg-brand px-4 text-[12.5px] font-semibold text-brand-foreground disabled:opacity-50"
+                    className="wf-interactive wf-pressable inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-brand px-4 text-[12.5px] font-semibold whitespace-nowrap text-brand-foreground disabled:opacity-50"
                   >
                     <PlusIcon className="size-3.5" aria-hidden="true" />
                     Add to pool

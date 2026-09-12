@@ -189,10 +189,10 @@ export function ReservationsBoard({
   }
 
   return (
-    <section className="mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 p-4 pb-24 md:p-8">
+    <section className="mx-auto flex min-h-full w-full max-w-5xl flex-col gap-5 p-4.5 pb-24">
       <header className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold text-foreground text-balance">
+          <h1 className="text-[15px] font-bold tracking-tight text-foreground text-balance">
             {t("reservations.title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground text-pretty">
@@ -228,7 +228,7 @@ export function ReservationsBoard({
                   ? t("reservations.unscheduled")
                   : t("reservations.day", { day })}
               </h2>
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3">
                 {entries.map((reservation) => (
                   <ReservationCard
                     key={reservation.id}

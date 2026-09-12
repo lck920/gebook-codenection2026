@@ -7,8 +7,6 @@ import {
 } from "@/entities/trip";
 import {
   addComment,
-  addExpense,
-  updateExpense,
   addTripDay,
   deleteTripDay,
   insertStop,
@@ -18,7 +16,6 @@ import {
   updateStop,
   deleteStop,
   updateTripDay,
-  type AddExpenseInput,
   type InsertStopInput,
   type UpdateStopInput,
   type UpdateTripDayInput,
@@ -78,15 +75,6 @@ export function useTripActions(tripId: string) {
     },
     onSuccess,
   });
-  const expense = useMutation({
-    mutationFn: (input: AddExpenseInput) => addExpense(tripId, input),
-    onSuccess,
-  });
-  const expenseUpdate = useMutation({
-    mutationFn: (v: { expenseId: string; input: AddExpenseInput }) =>
-      updateExpense(tripId, v.expenseId, v.input),
-    onSuccess,
-  });
   const day = useMutation({
     mutationFn: () => addTripDay(tripId),
     onSuccess,
@@ -127,8 +115,6 @@ export function useTripActions(tripId: string) {
     stopUpdate,
     stopDelete,
     stopMove,
-    expense,
-    expenseUpdate,
     day,
     dayUpdate,
     dayDelete,
