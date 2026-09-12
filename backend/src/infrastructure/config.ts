@@ -253,10 +253,12 @@ export function loadConfig(env: RawEnv, connectionString?: string): AppConfig {
         );
     }
 
-    const baseUrl = requireEnv(env.BASE_URL, "BASE_URL");
+    // Trailing slashes are the commonest way to type a URL into a dashboard
+    // and the commonest way to break Better Auth's `${baseURL}/api/auth`
+    // and the default trusted-origin list. Drop them once, here.
+    const baseUrl = requireEnv(env.BASE_URL, "BASE_URL").replace(/\/+$/, "");
     const publicUrl =
-        env.STORAGE_PUBLIC_URL?.trim() ||
-        `${baseUrl.replace(/\/$/, "")}/api/uploads`;
+        env.STORAGE_PUBLIC_URL?.trim() || `${baseUrl}/api/uploads`;
 
     const googleOAuth = parseOptionalCredentialPair(
         env.GOOGLE_CLIENT_ID,
@@ -274,7 +276,7 @@ export function loadConfig(env: RawEnv, connectionString?: string): AppConfig {
         betterAuthUrl: baseUrl,
         trustedOrigins: (env.TRUSTED_ORIGINS ?? `${baseUrl},gebook://`)
             .split(",")
-            .map((origin) => origin.trim())
+            .map(normalizeOrigin)
             .filter(Boolean),
         crossOriginCookies: env.CROSS_ORIGIN_COOKIES?.trim().toLowerCase() === "true",
         storage: loadStorageConfig(env, publicUrl),
@@ -318,6 +320,23 @@ const DEFAULT_OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 const DEFAULT_OSRM_URL = "https://router.project-osrm.org";
 const DEFAULT_GEO_TIMEOUT_MS = 12_000;
 const DEFAULT_GEO_CACHE_TTL_MS = 30 * 60 * 1000;
+
+/**
+ * Reduce a configured origin to the exact form a browser puts in the `Origin`
+ * header — scheme://host[:port], no path, no trailing slash. A value typed
+ * as `https://app.example.com/` looks right and matches nothing, which
+ * silently disables CORS for the whole frontend. Non-URL schemes such as
+ * `gebook://` (the mobile deep link) are kept as written.
+ */
+function normalizeOrigin(raw: string): string {
+    const value = raw.trim();
+    if (!/^https?:\/\//i.test(value)) return value;
+    try {
+        return new URL(value).origin;
+    } catch {
+        return value;
+    }
+}
 
 /** Geo provider selection. Defaults to OSM; Google requires an API key. */
 function parseGeoConfig(env: RawEnv): GeoConfig {

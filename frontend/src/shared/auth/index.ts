@@ -10,6 +10,7 @@ import i18n from "@/shared/i18n";
 import {
   getLocalTestSession,
   setLocalTestSession,
+  LOCAL_TEST_MODE_AVAILABLE,
   clearLocalTestSession,
   LOCAL_AUTH_EVENT,
   type LocalSessionData,
@@ -95,4 +96,4 @@ export async function signOut(options?: Parameters<typeof authClient.signOut>[0]
   }
 }
 
-export { setLocalTestSession, clearLocalTestSession };
+export { setLocalTestSession, clearLocalTestSession, LOCAL_TEST_MODE_AVAILABLE };
