@@ -1,5 +1,6 @@
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
+import { waitUntil as vercelWaitUntil } from "@vercel/functions";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import { initiatingAgentTurnId, type Defer } from "../../application";
@@ -251,9 +252,16 @@ export function createApp(
     streetViewService,
   } = container;
 
-  /** Schedule work past the response: waitUntil on Workers, floating on Node.
-   * Also track on the container so Workers disposeAfterDeferred waits for it
-   * before pool.end(). */
+  /** Schedule work past the response.
+   *
+   * Three runtimes, three lifetimes. Cloudflare Workers expose
+   * `executionCtx.waitUntil`. A long-lived Node server needs nothing — a
+   * floating promise simply runs. Vercel serverless is the trap: the
+   * instance is frozen the moment the response is sent, so a floating
+   * promise there is silently killed. Every ambient agent reply was
+   * scheduled this way and never ran; the chat showed "Working…" until its
+   * ceiling and nothing arrived. `@vercel/functions` `waitUntil` extends
+   * the instance until the promise settles, and is a no-op elsewhere. */
   const deferOf = (c: Context<AppEnv>): Defer => (task) => {
     const guarded = task.catch((err) =>
       {
@@ -272,7 +280,12 @@ export function createApp(
     try {
       c.executionCtx.waitUntil(guarded);
     } catch {
-      // Node runtime has no execution context; the floating promise is enough.
+      // Not on Workers. Vercel's equivalent below; plain Node needs neither.
+    }
+    try {
+      vercelWaitUntil(guarded);
+    } catch {
+      // Only throws for a non-promise; guarded is always a promise.
     }
   };
 
