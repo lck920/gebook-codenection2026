@@ -31,7 +31,7 @@ const external = Object.keys(pkg.dependencies ?? {}).filter(
  * Node already resolves the same way node-server.ts does locally) so
  * there's nothing left for Vercel's own resolver to trip over.
  */
-await mkdir(`${backendRoot}api`, { recursive: true });
+await mkdir(`${backendRoot}api-dist`, { recursive: true });
 
 await build({
   entryPoints: [`${backendRoot}api-src/route.ts`],
@@ -40,9 +40,12 @@ await build({
   format: "esm",
   target: "node20",
   external,
-  // Single-bracket catch-all: the form Vercel documents for plain api/
-  // functions. The optional [[...route]] variant is a Next.js convention,
-  // and nothing here needs it — every route lives under /api/<something>.
-  outfile: `${backendRoot}api/[...route].js`,
+  // NOT written into api/. Vercel decides which files are functions from the
+  // repo as cloned, before the build command runs, so a function that only
+  // exists after this script has run is never registered — it ships as a
+  // stray static file and every /api/* request falls through to public/.
+  // The committed api/[...route].js imports this bundle instead; Vercel
+  // traces that import after the build, when the file is present.
+  outfile: `${backendRoot}api-dist/route.js`,
   logLevel: "info",
 });
