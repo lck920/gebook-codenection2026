@@ -4,9 +4,9 @@
 
 **Problem Statement:** Travel Planner
 
-**Video Presentation:** [Unlisted YouTube Link](https://youtu.be/UuVywKLqQs0) 
+**Video Presentation:** https://youtu.be/UuVywKLqQs0
 
-**Presentation Slides:** [Public Link](https://canva.link/nm6rfnsezmonslo)
+**Presentation Slides:** https://canva.link/nm6rfnsezmonslo
 
 ---
 
@@ -94,7 +94,7 @@ The full flow we sketched before building: landing → login → dashboard → c
 
 ## 3. Design & Prototype
 
-**UI Prototype:** [gebook-frontend.vercel.app](https://gebook-frontend.vercel.app?_vercel_share=umc1RMCR9Mbt0BAaqUvl8QrzibNDSBv7)
+**UI Prototype:** https://gebook-frontend.vercel.app?_vercel_share=umc1RMCR9Mbt0BAaqUvl8QrzibNDSBv7
 
 ![Dashboard](assets/screens/dashboard.png)
 *Trips Hub — active trips, destination discovery tiles, and traveller level/streak.*
