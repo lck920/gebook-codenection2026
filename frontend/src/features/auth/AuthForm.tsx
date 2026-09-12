@@ -6,6 +6,7 @@ import {
   signIn,
   signUp,
   setLocalTestSession,
+  LOCAL_TEST_MODE_AVAILABLE,
 } from "@/shared/auth";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -103,6 +104,26 @@ export function AuthForm({ mode: externalMode, onModeChange }: AuthFormProps) {
    */
   function isNetworkFailure(err: unknown): boolean {
     return err instanceof TypeError;
+  }
+
+  /**
+   * Decide what an unreachable API means. In a dev build it is the cue to
+   * drop into the offline fixture. In production it is a misconfigured
+   * deployment — the browser reports a CORS block or a wrong BASE_URL with
+   * the same TypeError — and the only honest response is to say so.
+   * Returns true when the caller should stop; the fallback is handled here.
+   */
+  function handleUnreachable(user: { name?: string; email: string }): boolean {
+    if (LOCAL_TEST_MODE_AVAILABLE) {
+      setLocalTestSession(user);
+      return true;
+    }
+    toastManager.add({
+      title: t("errors.toastTitle"),
+      description: t("errors.unreachable"),
+      type: "error",
+    });
+    return true;
   }
 
   function showAuthError() {
@@ -205,7 +226,7 @@ export function AuthForm({ mode: externalMode, onModeChange }: AuthFormProps) {
           return;
         }
         if (unreachable) {
-          setLocalTestSession({ name: name || "Danial", email });
+          handleUnreachable({ name: name || "Danial", email });
           return;
         }
         if (result?.error && isEmailTaken(result.error)) {
@@ -228,13 +249,13 @@ export function AuthForm({ mode: externalMode, onModeChange }: AuthFormProps) {
         return;
       }
       if (unreachable) {
-        setLocalTestSession({ email });
+        handleUnreachable({ email });
         return;
       }
       showAuthError();
     } catch (err) {
       if (isNetworkFailure(err)) {
-        setLocalTestSession({ email });
+        handleUnreachable({ email });
         return;
       }
       showAuthError();
@@ -288,7 +309,7 @@ export function AuthForm({ mode: externalMode, onModeChange }: AuthFormProps) {
     } catch (err) {
       // Offline dev fallback only; a rejected code must stay rejected.
       if (isNetworkFailure(err)) {
-        setLocalTestSession({ name: name || "Danial", email });
+        handleUnreachable({ name: name || "Danial", email });
         return;
       }
       showOtpError();
@@ -317,8 +338,15 @@ export function AuthForm({ mode: externalMode, onModeChange }: AuthFormProps) {
           type: "error",
         });
       }
-    } catch {
-      setLocalTestSession({ email });
+    } catch (err) {
+      if (isNetworkFailure(err)) {
+        handleUnreachable({ email });
+        return;
+      }
+      toastManager.add({
+        title: t("errors.twoFactorInvalid"),
+        type: "error",
+      });
     } finally {
       setPending(false);
     }

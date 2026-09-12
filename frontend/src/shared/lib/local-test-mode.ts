@@ -22,8 +22,18 @@ export interface LocalSessionData {
   };
 }
 
+/**
+ * The offline fixture exists so the UI can be worked on with no API running.
+ * It must never be reachable from a production build: there, a request that
+ * cannot reach the API means the deployment is misconfigured (CORS, a wrong
+ * BASE_URL), and signing the visitor into a shared fake account under
+ * whatever email they typed only hides that — it looked, on Vercel, like
+ * "janedoe logged in and got Danial's trips".
+ */
+export const LOCAL_TEST_MODE_AVAILABLE = import.meta.env.DEV;
+
 export function getLocalTestSession(): LocalSessionData | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined" || !LOCAL_TEST_MODE_AVAILABLE) return null;
   const raw = localStorage.getItem(LOCAL_SESSION_KEY);
   if (!raw) return null;
   try {
@@ -34,6 +44,9 @@ export function getLocalTestSession(): LocalSessionData | null {
 }
 
 export function setLocalTestSession(user: Partial<LocalUser> = {}): LocalSessionData {
+  if (!LOCAL_TEST_MODE_AVAILABLE) {
+    throw new Error("Local test mode is only available in development builds");
+  }
   const sessionData: LocalSessionData = {
     user: {
       id: user.id || "local-tester-1",
