@@ -4,8 +4,6 @@
 
 **Problem Statement:** Travel Planner
 
-**Video Presentation:** https://youtu.be/UuVywKLqQs0
-
 **Presentation Slides:** https://canva.link/nm6rfnsezmonslo
 
 ---
